@@ -1,0 +1,56 @@
+#pragma once
+
+#include "VehicleInputAxis.generated.h"
+
+// IMPORTANT: Do NOT modify this enum, it would break the fix introduced with BR_SAVE_FIXED_ENUM_SERIALIZATION_VERSION
+UENUM(BlueprintType)
+enum class EVehicleInputAxis : uint8
+{
+	None,
+	Steering,
+	FirstAxis = Steering,
+	FirstPlayerAxis = Steering,
+	Throttle,
+	Brake,
+	Pitch,
+	ViewPitch,
+	ViewYaw,
+	LastAxis = ViewYaw,
+	LastPlayerAxis = ViewYaw,
+	SteeringAlt,
+	FirstAltAxis = SteeringAlt,
+	ThrottleAlt,
+	BrakeAlt,
+	PitchAlt,
+	ViewPitchAlt,
+	ViewYawAlt,
+	LastAltAxis = ViewYawAlt,
+	Horn,
+	FirstAction = Horn,
+	FirstPlayerAction = Horn,
+	Action1,
+	FirstFireAction = Action1,
+	Action2,
+	Action3,
+	Action4,
+	Action5,
+	Action6,
+	Action7,
+	Action8,
+	LastFireAction = Action8,
+	DisableSteering,
+	InvertSteering,
+	HandBrake,
+	OperationMode,
+	Headlight,
+	Beacon,
+	WarningLight,
+	LastPlayerAction = WarningLight,
+	Taillight,
+	BrakeLight,
+	ReversingLight,
+	LastAction = ReversingLight,
+	AlwaysOn,
+	Custom,
+	Max
+};
