@@ -1,0 +1,17 @@
+// Copyright Fluppisoft, 2020
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Bricks/Brick.h"
+#include "ConeBrick.generated.h"
+
+UCLASS(Abstract)
+class BRICKRIGS_API UConeBrickStaticInfo : public UBrickStaticInfo
+{
+	GENERATED_BODY()
+
+public:
+	// ~Constructor
+	UConeBrickStaticInfo();
+};
