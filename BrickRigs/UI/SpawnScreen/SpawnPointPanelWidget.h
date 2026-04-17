@@ -6,7 +6,7 @@
 #include "UI/HUD/HUDIcons/HUDIconPanelWidget.h"
 #include "SpawnPointPanelWidget.generated.h"
 
-class UBrickGridPanel;
+class UGridPanel;
 
 /**
  *
@@ -19,7 +19,7 @@ class BRICKRIGS_API USpawnPointPanelWidget : public UHUDIconPanelWidget
 protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* GridPanel;
+	UGridPanel* GridPanel;
 	// ~Widgets
 
 	// ~Properties

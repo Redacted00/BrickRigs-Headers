@@ -20,15 +20,13 @@ private:
 	// The current parent property chain depth we are in while calling post modify events for struct properties
 	int32 PropertyChainDepth;
 	// Objects that have been modified
-	TArray<TWeakObjectPtr<>> Objects;
+	TArray<TWeakObjectPtr<UObject>> Objects;
 	// The actively selected object
-	TWeakObjectPtr<> ActiveObject;
+	TWeakObjectPtr<UObject> ActiveObject;
 	// Indicates if the value has been committed, is still pending etc
 	EValueChangedEventType EventType;
 	// Whether the property has been modified externally
 	bool bExternalChange;
-	// Whether all properties should be updated after the event
-	bool bUpdateAllProperties = false;
 	// ~Variables
 
 public:
@@ -36,8 +34,8 @@ public:
 	FBrickPropertyChangedEvent(ABasePlayerController* InPlayer, const FName& InPropertyName, const FString& InFullPropertyName, const TArray<FStructProperty*>& InParentPropertyChain, UObject* InActiveObject, EValueChangedEventType InEventType);
 
 	// Version for external events
-	FBrickPropertyChangedEvent(const FName& InPropertyName, UObject* InObject, const bool bUpdateAllProperties)
-		: Player(nullptr), PropertyChainDepth(0), EventType(EValueChangedEventType::Commit), bExternalChange(true), bUpdateAllProperties(bUpdateAllProperties)
+	FBrickPropertyChangedEvent(const FName& InPropertyName, UObject* InObject)
+		: Player(nullptr), PropertyChainDepth(0), EventType(EValueChangedEventType::Commit), bExternalChange(true)
 	{
 		Objects.Add(InObject);
 
@@ -48,7 +46,7 @@ public:
 		check(PropertyNameStrings.Num());
 
 		PropertyChain.Reserve(PropertyNameStrings.Num());
-		for (auto i = 0; i < PropertyNameStrings.Num(); ++i)
+		for (int32 i = 0; i < PropertyNameStrings.Num(); ++i)
 		{
 			PropertyChain.Add(*PropertyNameStrings[i]);
 		}
@@ -105,7 +103,7 @@ public:
 	void SetPropertyChainDepth(int32 NewDepth) const
 	{
 		// NOTE: This is a bit hacky, but needed because in FBrickProperty::OnPropertyModified the event is passed as const
-		auto& MutableThis = (FBrickPropertyChangedEvent&)*this;
+		FBrickPropertyChangedEvent& MutableThis = (FBrickPropertyChangedEvent&)(*this);
 		MutableThis.PropertyChainDepth = NewDepth;
 	}
 
@@ -159,10 +157,5 @@ public:
 	bool IsExternalEvent() const
 	{
 		return bExternalChange;
-	}
-
-	bool ShouldUpdateAllProperties() const
-	{
-		return bUpdateAllProperties;
 	}
 };

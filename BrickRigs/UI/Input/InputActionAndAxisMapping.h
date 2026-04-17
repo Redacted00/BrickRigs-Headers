@@ -65,7 +65,7 @@ struct FInputActionAndAxisMapping : public FInputActionKeyMapping
 	bool IsInConflictWith(const FInputActionAndAxisMapping& Other) const
 	{
 		// If the bound key is a modifier key, which is used on the other action, we are in conflict
-		if ((Key.IsModifierKey() && Other.HasModifierKey(Key)) || (Other.Key.IsModifierKey() && HasModifierKey(Other.Key)))
+		if (Key.IsModifierKey() && Other.HasModifierKey(Key) || Other.Key.IsModifierKey() && HasModifierKey(Other.Key))
 		{
 			return true;
 		}

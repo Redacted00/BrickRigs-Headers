@@ -171,8 +171,6 @@ struct FSensorOutputChannel : public FVehicleOutputChannel
 	// Converts the given value according to the channel settings
 	float MapValue(float Val) const
 	{
-		// NOTE: Perform mapping in double precision, otherwise the value could change notably even if the input and output ranges are identical
-		const auto Result = FMath::GetMappedRangeValueClamped<double>(TRange<double>{MinIn, MaxIn}, TRange<double>{MinOut, MaxOut}, Val);
-		return static_cast<float>(Result);
+		return FMath::GetMappedRangeValueClamped({MinIn, MaxIn}, {MinOut, MaxOut}, Val);
 	}
 };

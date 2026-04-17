@@ -19,14 +19,12 @@ enum class ELightBrickDirection : uint8
 	Y,
 	YNeg,
 	Z,
-	ZNeg
+	ZNeg,
+	Max
 };
 
-USTRUCT()
-struct FLightBrickEditorParams : public FScalableBrickEditorParams
+struct FLightBrickEditorParams : FScalableBrickEditorParams
 {
-	GENERATED_BODY()
-
 	// Mesh used to visualize the light frustum
 	TBrickEditorComponentPtr<UBrickEditorStaticMeshComponent> FrustumMeshComponent;
 };
@@ -109,7 +107,6 @@ public:
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
-	virtual void PostConstructVehicle() override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;
 	virtual void SetupCreateRootComponentParams(FBrickEditorPrimitiveComponentParams& Params) override;
@@ -125,13 +122,13 @@ public:
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void PostModifyBrickProperty(const FBrickPropertyChangedEvent& Event) override;
 	virtual bool IsBrickMaterialSupported(const UBrickMaterial* InMaterial) const override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
+	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	virtual void UpdateEditorVisualization() override;
 	virtual void OnGenerateConnectors() override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FLightBrickEditorParams>();
+		return MakeUnique<FLightBrickEditorParams>();
 	}
 
 	// ~Super Interface

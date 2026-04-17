@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Misc/FluTeamIdStatics.h"
+#include "Misc/BrickTeamId.h"
 #include "CoreMinimal.h"
 #include "MatchWinner.generated.h"
 
@@ -52,13 +52,13 @@ public:
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		FFluTeamIdStatics::SerializeTeamId(Ar, WinnerTeamId);
+		FBrickTeamId::SerializeTeamId(Ar, WinnerTeamId);
 		return !Ar.IsError();
 	}
 };
 
 template <>
-struct TStructOpsTypeTraits<FMatchWinner> : TStructOpsTypeTraitsBase2<FMatchWinner>
+struct TStructOpsTypeTraits<FMatchWinner> : public TStructOpsTypeTraitsBase2<FMatchWinner>
 {
 	enum
 	{

@@ -11,7 +11,6 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Misc/BrickAssetManager.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "InventoryComponent.generated.h"
 
 // Actors
@@ -116,7 +115,7 @@ protected:
 
 	// ~Variables
 	// Used for async loading
-	FFluAsyncAssetLoader AssetLoader_ItemAddedSound;
+	FSmartStreamableHandle StreamableHandle_ItemAddedSound;
 
 	// The struct that stores information about the inventory
 	UPROPERTY(Transient, Replicated)
@@ -238,7 +237,6 @@ public:
 	{
 		return SpawnItems(ItemClass, Amount, nullptr);
 	}
-
 	// Version which outputs dropped item actors
 	int32 SpawnItems(TSubclassOf<AInventoryItem> ItemClass, int32 Amount, TArray<AInventoryItem*>* OutDroppedItems);
 	// Returns if and how many items can be moved to the other inventory
@@ -291,7 +289,6 @@ public:
 	{
 		return GetAmmo(TArray({InAmmo}));
 	}
-
 	// Version that returns the amount of all ammo types
 	int32 GetAmmo() const
 	{

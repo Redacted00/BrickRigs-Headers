@@ -7,7 +7,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Misc/BrickAssetManager.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "HUDIconContainerWidget.generated.h"
 
 class UHUDIconPanelWidget;
@@ -27,7 +26,7 @@ class BRICKRIGS_API UHUDIconContainerWidget : public UUserWidget
 	GENERATED_BODY()
 
 	// ~Variables
-	FFluAsyncAssetLoader AssetLoader_IconClass;
+	FSmartStreamableHandle StreamableHandle_IconClass;
 	// Pointer to our owning panel
 	TWeakObjectPtr<UHUDIconPanelWidget> PanelWidget;
 	// Cached pointer to the owning icon component
@@ -55,7 +54,7 @@ class BRICKRIGS_API UHUDIconContainerWidget : public UUserWidget
 
 	// Teams of the actor this widget is displaying
 	// NOTE: We need multiple possible teams for vehicles with multiple passengers from different teams
-	TArray<FGenericTeamId> IconTeamIds;
+	TSet<FGenericTeamId> IconTeamIds;
 	// Cached team ID of the local player
 	FGenericTeamId LocalPlayerTeamId;
 	// The current team attitude
@@ -147,7 +146,7 @@ public:
 	bool CanSpawn() const;
 
 	// Allows icons to set the associated teams
-	void SetIconTeamIds(const TArray<FGenericTeamId>& InTeamIds);
+	void SetIconTeamIds(const TSet<FGenericTeamId>& InTeamIds);
 	// Get the current team id of the local player
 	FGenericTeamId GetLocalPlayerTeamId() const;
 	// Called from the icon panel when the player changes teams

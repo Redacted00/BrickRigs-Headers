@@ -46,7 +46,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Text)
 	float FontSize;
 	UPROPERTY(EditDefaultsOnly, Category = Text)
-	FColor TextColor;
+	FBrickColor TextColor;
 	UPROPERTY(EditDefaultsOnly, Category = Text)
 	float OutlineThickness;
 	// ~Brick properties
@@ -69,4 +69,7 @@ private:
 	void UpdateText();
 	// Returns the max allowed font size
 	float GetMaxFontSize() const;
+
+	// Property callbacks
+	static FFloatInterval GetFontSizeValueRange(const FBrickPropertyContainer& Container);
 };

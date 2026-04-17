@@ -9,7 +9,7 @@
 
 class UInputActionCategoryWidget;
 class UInputActionWidget;
-class UBrickGridPanel;
+class UGridPanel;
 class UBaseInputComponent;
 class UInputCategory;
 
@@ -23,7 +23,7 @@ enum class EInputActionListMode : uint8
 };
 
 /**
- *
+ * 
  */
 UCLASS(Abstract)
 class BRICKRIGS_API UInputActionListWidget : public UUserWidget
@@ -53,7 +53,7 @@ class BRICKRIGS_API UInputActionListWidget : public UUserWidget
 protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* MainGridPanel;
+	UGridPanel* MainGridPanel;
 	// ~Widgets
 
 	// ~Properties

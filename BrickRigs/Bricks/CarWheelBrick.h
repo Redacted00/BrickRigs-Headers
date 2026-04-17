@@ -63,7 +63,7 @@ class BRICKRIGS_API UCarWheelBrick : public UWheelBrick, public IInterface_Colli
 protected:
 	// ~Brick Properties
 	UPROPERTY(EditDefaultsOnly, Category = Wheel)
-	float TireThickness;
+	FBrickUnits TireThickness;
 	UPROPERTY(EditDefaultsOnly, Category = Wheel)
 	float TirePressureRatio;
 	// ~Brick Properties
@@ -86,7 +86,6 @@ public:
 	virtual float GetBodySetupTargetRadius() const override;
 	virtual float GetRimRadiusOffset() const override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
-	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	// ~Super Interface
 
 private:

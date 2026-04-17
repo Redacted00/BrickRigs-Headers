@@ -44,7 +44,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Image)
 	UBrickDecal* Image;
 	UPROPERTY(EditDefaultsOnly, Category = Image)
-	FColor ImageColor;
+	FBrickColor ImageColor;
 	// ~Brick properties
 
 public:

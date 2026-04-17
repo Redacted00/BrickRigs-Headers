@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "Components/DestructibleISMComponentInterface.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Physics/ContactModifyInterface.h"
@@ -13,7 +14,7 @@ class UDestructibleInstancesComponent;
  * The DestructibleISMComponent and DestructibleHISMComponent are used by the DestructibleInstancesComponent class
  */
 
- // Macro used to mirror the overrides for both classes
+// Macro used to mirror the overrides for both classes
 #define DESTRUCTIBLE_ISM_BODY(...) \
 	virtual void ReceiveComponentDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override { \
 		ReceiveComponentDamageInternal(DamageAmount, DamageEvent, EventInstigator, DamageCauser); } \
@@ -46,6 +47,13 @@ public:
 
 	DESTRUCTIBLE_ISM_BODY()
 
+#if !BR_BUILD_VANILLA
+	// Make sure not too many instances are being added per leaf since that affects culling and LOD accuracy quite a lot
+	virtual int32 DesiredInstancesPerLeaf() override
+	{
+		return FMath::Min(Super::DesiredInstancesPerLeaf(), 4);
+	}
+#endif
 };
 
 #undef DESTRUCTIBLE_ISM_SUPER_INTERFACE

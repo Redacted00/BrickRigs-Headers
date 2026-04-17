@@ -4,7 +4,7 @@
 
 #include "BrickEditor/Components/BrickEditorParticleComponent.h"
 #include "Interaction/InteractionComponent.h"
-#include "Bricks/ScalableBrick.h"
+#include "Bricks/Brick.h"
 #include "Damage/DamageType_Fire.h"
 #include "DetonatorBrick.generated.h"
 
@@ -15,7 +15,7 @@ class BRICKRIGS_API UDamageType_Detonator : public UDamageType_Fire
 };
 
 UCLASS(Abstract)
-class BRICKRIGS_API UDetonatorBrickStaticInfo : public UScalableBrickStaticInfo
+class BRICKRIGS_API UDetonatorBrickStaticInfo : public UBrickStaticInfo
 {
 	GENERATED_BODY()
 
@@ -40,7 +40,7 @@ public:
  *
  */
 UCLASS()
-class BRICKRIGS_API UDetonatorBrick : public UScalableBrick
+class BRICKRIGS_API UDetonatorBrick : public UBrick
 {
 	GENERATED_BODY()
 
@@ -64,7 +64,7 @@ public:
 	UDetonatorBrick();
 
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void OnBrickDamageStateChanged(EBrickDamageState PrevState) override;
 
 	virtual bool HasAnyInputChannel() const override

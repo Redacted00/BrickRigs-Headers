@@ -2,28 +2,31 @@
 
 #pragma once
 
-#include "ScalableBrick.h"
+#include "Bricks/Brick.h"
 #include "FlapBrick.generated.h"
 
-USTRUCT()
-struct FFlapBrickEditorParams : public FScalableBrickEditorParams
+struct FFlapBrickEditorParams : public FBrickEditorParams
 {
-	GENERATED_BODY()
-
 	bool bFocusedMinAngle;
 	bool bFocusedMaxAngle;
 };
 
 UCLASS(Abstract)
-class BRICKRIGS_API UFlapBrickStaticInfo : public UScalableBrickStaticInfo
+class BRICKRIGS_API UFlapBrickStaticInfo : public UBrickStaticInfo
 {
 	GENERATED_BODY()
 
 public:
 	// ~Properties
+	// The mesh to spawn for the movable flap
+	UPROPERTY(EditDefaultsOnly, Category = Flap)
+	UStaticMesh* FlapMesh;
 	// Rate at which the flap is moved
 	UPROPERTY(EditDefaultsOnly, Category = Flap)
 	float FlapInterpSpeed;
+	// Cached transform of the flap socket
+	UPROPERTY(VisibleDefaultsOnly, Category = Flap)
+	FTransform FlapSocketTransform;
 	// ~Properties
 
 	// ~Constructor
@@ -31,6 +34,9 @@ public:
 
 	// ~Super Interface
 #if WITH_EDITOR
+	virtual void BuildCachedData() override;
+	virtual UStaticMesh* GetFluidDynamicProxyMesh() const override;
+
 	virtual void ProcessFluidDynamicProperties(const FVector& BoundsSize, const FVector& SurfaceAreas, const FVector& AverageLocation, const FVector* AverageNormals) override
 	{
 		// Double the surface size for legacy reasons
@@ -44,23 +50,19 @@ public:
  *
  */
 UCLASS()
-class BRICKRIGS_API UFlapBrick : public UScalableBrick
+class BRICKRIGS_API UFlapBrick : public UBrick
 {
 	GENERATED_BODY()
 
-	enum class EFlapPrimitiveData : uint8
-	{
-		FlapAngle = Max,
-		Max = FlapAngle + 1
-	};
-
 	// ~Variables
+	// The mesh component used for the flap
+	TBrickEditorComponentPtr<UBrickEditorStaticMeshComponent> FlapMeshComponent;
 	// Current angle of the flap
-	float FlapAngle = 0.f;
+	float FlapAngle;
 	// Current input channel value
-	float InputChannelValue = 0.f;
+	float InputChannelValue;
 	// Index of the flap element on the part root
-	mutable int32 FluidDynamicElementIndex = INDEX_NONE;
+	mutable int32 FluidDynamicElementIndex;
 	// ~Variables
 
 protected:
@@ -74,7 +76,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Flap)
 	float MaxAngle;
 	UPROPERTY(EditDefaultsOnly, Category = Flap)
-	bool bAccumulateInput = false;
+	bool bAccumulateInput;
 	// ~Brick Properties
 
 public:
@@ -82,10 +84,9 @@ public:
 	UFlapBrick();
 
 	// ~Super Interface
-	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void RecycleBrickEditorObject() override;
-	virtual void PostConstructVehicle() override;
-	virtual void SetupCreateRootComponentParams(FBrickEditorPrimitiveComponentParams& Params) override;
+	virtual void PostInitializeBrickEditorObject() override;
+	virtual void UpdateCustomDepth(bool bEnable, uint8 Stencil) override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;
 
@@ -97,28 +98,29 @@ public:
 	virtual void GetInputChannels(TArray<FVehicleInputChannel*>& OutInputChannels) const override;
 	virtual void OnIsControllableChanged() override;
 	virtual void RepairBrick() override;
+	virtual void UpdateBrickMaterial() override;
+	virtual bool GetBrickEditorObjectLocalBounds(FVector& OutBoundsMin, FVector& OutBoundsMax) const override;
 	virtual void GetFluidDynamicElements(FFluidDynamicElements& OutElements, const FTransform& Transform) const override;
 	virtual void GetFluidDynamicSurface(FFluidDynamicSurface& OutElement, const FTransform& Transform) const override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void UpdateFocusedBrickProperty(const FBrickPropertyFocusEvent& Event) override;
-	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EAxis::Type MirrorAxis) const override;
+	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EBrickEditorMirrorMode MirrorMode) const override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FFlapBrickEditorParams>();
+		return MakeUnique<FFlapBrickEditorParams>();
 	}
 
-	virtual FVector GetMaxBrickSize() const override;
-	virtual FBoxSphereBounds CalcStaticMeshBounds() const override;
 	// ~Super Interface
 
 private:
 	// Sets the current angle of the flap
 	void SetFlapAngle(float NewAngle);
-
-	// Converts the flap angle for the material parameter
-	auto GetFlapAngleParam() const
+	// Returns the current relative transform of the flap surface
+	FTransform GetFlapRelativeTransform() const
 	{
-		return -FlapAngle / 360.f;
+		auto FlapTransform = GetStaticInfo<UFlapBrickStaticInfo>()->FlapSocketTransform;
+		FlapTransform.SetRotation(FlapTransform.GetRotation() * FRotator(FlapAngle, 0.f, 0.f).Quaternion());
+		return FlapTransform;
 	}
 };

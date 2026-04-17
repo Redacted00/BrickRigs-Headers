@@ -48,7 +48,7 @@ public:
 
 	// Set the displayed key
 	UFUNCTION(BlueprintCallable)
-	void SetKey(const FKey InKey, bool bInUsedAsModifier = false);
+	void SetKey(const FKey& InKey, bool bInUsedAsModifier = false);
 
 protected:
 	// ~Blueprint Interface

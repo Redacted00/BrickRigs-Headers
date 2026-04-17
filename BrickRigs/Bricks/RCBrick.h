@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "ScalableBrick.h"
+#include "Bricks/Brick.h"
 #include "RCBrick.generated.h"
 
 UCLASS(Abstract)
-class BRICKRIGS_API URCBrickStaticInfo : public UScalableBrickStaticInfo
+class BRICKRIGS_API URCBrickStaticInfo : public UBrickStaticInfo
 {
 	GENERATED_BODY()
 
@@ -19,14 +19,15 @@ public:
  * 
  */
 UCLASS()
-class BRICKRIGS_API URCBrick : public UScalableBrick
+class BRICKRIGS_API URCBrick : public UBrick
 {
 	GENERATED_BODY()
 
 public:
-	// ~Super Interface
-	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
+	// ~Constructor
+	URCBrick();
 
+	// ~Super Interface
 	virtual bool IsRCBrick() const override
 	{
 		return true;

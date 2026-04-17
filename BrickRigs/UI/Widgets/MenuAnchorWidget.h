@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "UI/Misc/BrickUITimer.h"
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Misc/FluTimer.h"
 #include "MenuAnchorWidget.generated.h"
 
 /**
@@ -16,7 +16,7 @@ class BRICKRIGS_API UMenuAnchorWidget : public UUserWidget
 	GENERATED_BODY()
 
 	// ~Variables
-	FFluUITimer Timer_RemoveMenu;
+	FBrickUITimer Timer_RemoveMenu;
 	// ~Variables
 
 public:

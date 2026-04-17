@@ -1,17 +1,103 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BrickEditorSaveVersion.generated.h"
 
-using FBrickRigsSaveVersion = uint8;
+USTRUCT()
+struct FBrickRigsSaveVersion
+{
+	GENERATED_BODY()
+
+private:
+	uint8 Version;
+
+public:
+	// ~Constructor
+	FBrickRigsSaveVersion(uint8 InVersion = 0)
+		: Version(InVersion)
+	{
+	}
+
+	FString ToString() const
+	{
+		return LexToString(Version);
+	}
+
+	void FromString(const FString& InString)
+	{
+		LexFromString(Version, *InString);
+	}
+
+	bool operator==(const FBrickRigsSaveVersion& Other) const
+	{
+		return Version == Other.Version;
+	}
+
+	bool operator!=(const FBrickRigsSaveVersion& Other) const
+	{
+		return Version != Other.Version;
+	}
+
+	bool operator>(const FBrickRigsSaveVersion& Other) const
+	{
+		return Version > Other.Version;
+	}
+
+	bool operator>=(const FBrickRigsSaveVersion& Other) const
+	{
+		return Version >= Other.Version;
+	}
+
+	bool operator<(const FBrickRigsSaveVersion& Other) const
+	{
+		return Version < Other.Version;
+	}
+
+	bool operator<=(const FBrickRigsSaveVersion& Other) const
+	{
+		return Version <= Other.Version;
+	}
+
+	friend FArchive& operator<<(FArchive& Ar, FBrickRigsSaveVersion& InVersion)
+	{
+		Ar << InVersion.Version;
+		return Ar;
+	}
+
+	bool ExportTextItem(FString& ValueStr, const FBrickRigsSaveVersion& DefaultValue, UObject* Parent, int32 PortFlags, UObject* ExportRootScope) const
+	{
+		ValueStr += FString::FromInt(Version);
+		return true;
+	}
+
+	bool ImportTextItem(const TCHAR*& Buffer, int32 PortFlags, UObject* OwnerObject, FOutputDevice* ErrorText)
+	{
+		auto ImportedString = FString();
+		const auto* NewBuffer = FPropertyHelpers::ReadToken(Buffer, ImportedString, false);
+		if (!NewBuffer)
+		{
+			return false;
+		}
+
+		FromString(ImportedString);
+		Buffer = NewBuffer;
+
+		return true;
+	}
+};
+
+template <>
+struct TStructOpsTypeTraits<FBrickRigsSaveVersion> : TStructOpsTypeTraitsBase2<FBrickRigsSaveVersion>
+{
+	enum
+	{
+		WithExportTextItem = true,
+		WithImportTextItem = true
+	};
+};
 
 // Current save version, the legacy UBrickStatics version ended at 6
-const static FBrickRigsSaveVersion BR_SAVE_VERSION = 15;
-// Version where the brick units and brick size types were removed
-const static FBrickRigsSaveVersion BR_SAVE_BRICK_UNITS_REMOVED_VERSION = 15;
-// Version where the driver seat stopped being serialized
-const static FBrickRigsSaveVersion BR_SAVE_DRIVER_SEAT_BY_INDEX_VERSION = 15;
-// Version where color was saved as RGB again instead of HSV
-const static FBrickRigsSaveVersion BR_SAVE_COLOR_RGB_VERSION = 15;
+const static FBrickRigsSaveVersion BR_SAVE_VERSION = 14;
 // Version where brick units started to be saved as a float instead of uint16
 const static FBrickRigsSaveVersion BR_SAVE_BRICK_UNITS_FLOAT_VERSION = 14;
 // Version where wheel meshes were moved so their connectors would line up with the origin

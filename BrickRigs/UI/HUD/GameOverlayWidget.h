@@ -175,13 +175,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateThumbnailNotification(UHUDNotificationWidget* Widget);
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateVehicleSeatNotification(UHUDNotificationWidget* Widget, const FText& SeatDisplayName);
-	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateVehicleCameraNotification(UHUDNotificationWidget* Widget, const FText& CameraDisplayName);
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateVehicleDownloadNotification(UHUDNotificationWidget* Widget, const FText& VehicleDisplayName, float Progress);
-	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateVehicleConstructionNotification(UHUDNotificationWidget* Widget, const FText& VehicleDisplayName, float Progress);
+	void UpdateVehicleDownloadNotification(UHUDNotificationWidget* Widget, const FText& VehicleDisplayName, bool bIsDownloading, float Progress);
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateSaveNotification(UHUDNotificationWidget* Widget, bool bSuccess, bool bIsAutoSave);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -254,7 +250,6 @@ private:
 	void OnVehicleSeatChanged(USeatBrick* NewSeat);
 	void SetVehicleSeat(USeatBrick* NewSeat);
 	void OnVehicleDownloadProgressChanged(ABrickVehicleDownloadReplicator* InDownloadReplicator, const TOptional<float>& Progress);
-	void OnVehicleConstructionProgressChanged(ABrickVehicle* InVehicle, const TOptional<float>& Progress);
 	void OnReceivedChatMessages(const TArray<FBrickChatMessage>& ChatMessages);
 	void OnBrickEditorChanged(ABrickEditor* NewEditor);
 	void SetBrickEditor(ABrickEditor* NewEditor);

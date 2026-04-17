@@ -46,7 +46,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateItemName(const FText& NewName);
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateFireMode(const EFireMode NewMode, const bool bHasFirearm);
+	void UpdateFireMode(EFireMode NewMode);
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateAmmo(int32 Current, int32 Capacity, int32 Ammo);
 	UFUNCTION(BlueprintImplementableEvent)

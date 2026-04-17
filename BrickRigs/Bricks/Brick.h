@@ -10,6 +10,8 @@
 #include "Misc/BrickPartRootParams.h"
 #include "Components/BrickStaticMeshComponent.h"
 #include "Misc/BrickTickFunction.h"
+#include "Misc/BrickColor.h"
+#include "Misc/BrickUnits.h"
 #include "Misc/BrickDamage.h"
 #include "BrickEditor/BrickEditorSnappingOffset.h"
 #include "Vehicle/VehicleInputChannel.h"
@@ -18,12 +20,9 @@
 #include "Vehicle/BrickConnection.h"
 #include "BrickEditor/BrickEditorObject.h"
 #include "Misc/CustomCollisionChannels.h"
-#include "Misc/FuelTankParams.h"
 #include "UObject/Object.h"
 #include "Brick.generated.h"
 
-class UBrickEditorArrowComponent;
-struct FFuelTankParams;
 // Actors
 class ABrickVehicle;
 class ABrickCharacter;
@@ -46,15 +45,10 @@ static auto GVisualizeFluidDynamics = 0;
 static auto GDisableDetachedBrickCollision = 0;
 #endif
 
-USTRUCT()
-struct FBrickEditorParams : public FBrickEditorObjectEditorParams
+struct FBrickEditorParams : FBrickEditorObjectEditorParams
 {
-	GENERATED_BODY()
-
 	// Used to visualize connector fields in the editor
 	TBrickEditorComponentPtr<UBrickConnectorsISMComponent> ConnectorsISMComponent;
-	// Whether a property is currently being modified
-	bool bIsPropertyChangePending = false;
 };
 
 UCLASS(Abstract)
@@ -98,10 +92,10 @@ public:
 	// The brick color to use when rendering thumbnails
 	// NOTE: This used to be DefaultBrickColor, but changing a default property value causes issues since they are not saved in existing creations
 	UPROPERTY(EditDefaultsOnly, Category = Brick)
-	FColor ThumbnailBrickColor;
-	// Dimensions of the brick
+	FBrickColorWithAlpha ThumbnailBrickColor;
+	// The dimensions of the brick
 	UPROPERTY(EditDefaultsOnly, Category = Brick)
-	FVector BrickSize;
+	FBrickSize BrickSize;
 	// Whether the brick size should be appended to the display name
 	UPROPERTY(EditDefaultsOnly, Category = Brick)
 	bool bAppendBrickSizeToDisplayName;
@@ -133,9 +127,6 @@ public:
 	// Whether lift generation should be enabled by default
 	UPROPERTY(EditDefaultsOnly, Category = Physics)
 	uint8 bDefaultGenerateLift : 1;
-	// Whether physics properties should be calculated from the shapes
-	UPROPERTY(EditDefaultsOnly, Category = Physics)
-	uint8 bCalculatePhysicsPropertiesFromShapes : 1;
 	// Cached mass and buoyancy related properties
 	UPROPERTY(VisibleDefaultsOnly, Category = Physics)
 	float Volume;
@@ -160,7 +151,7 @@ public:
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 	virtual FText GetDisplayName() const override;
 	virtual void GetBrickEditorFilterTags(FGameplayTagContainer& OutTags) const override;
-	virtual FVector GetBrickEditorObjectSize() const override;
+	virtual FBrickSize GetBrickEditorObjectSize() const override;
 	virtual float GetBrickEditorObjectPrice() const override;
 	virtual void GetTooltipContent(FTooltipContent& OutContent) const override;
 #if WITH_EDITOR
@@ -174,7 +165,7 @@ public:
 
 	// Used to calculate the actual mass properties at runtime
 	void GetMassProperties(UBrickPhysicalMaterial* PhysMaterial, float InMassScale, float InVolumeScale, PxMassProperties& OutMassProps) const;
-	// Applies scaling etc. to the mass properties
+	// Applies scaling etc to the mass properties
 	void ConvertMassProperties(UBrickPhysicalMaterial* PhysMaterial, float InMassScale, PxMassProperties& InOutMassProps) const;
 	// Used to calculate the mass properties from a list of shapes
 	void CalcMassPropertiesFromShapes(const TArray<FPhysicsShapeHandle_PhysX>& Shapes, PxMassProperties& OutMassProps) const;
@@ -185,15 +176,7 @@ public:
 	}
 
 	// Calculates the price of the brick
-	float CalcPrice(const UBrickMaterial* BrickMaterial, const FVector& InBrickSize, bool bGenerateLift) const;
-	// Calculates the price of fuel
-	static float CalcFuelPrice(const FFuelTankParams& Params);
-
-	// Can be implemented for bricks which store fuel
-	virtual FFuelTankParams GetFuelTankParams() const
-	{
-		return {};
-	}
+	float CalcPrice(const UBrickMaterial* BrickMaterial, const FBrickSize& InBrickSize, bool bGenerateLift) const;
 
 protected:
 	// Returns the physical material that is used by default
@@ -224,8 +207,6 @@ class BRICKRIGS_API UBrick : public UBrickEditorObject
 	GENERATED_BODY()
 
 protected:
-	static constexpr auto MaxCustomBrickNameLength = 32;
-
 	enum EBrickPrimitiveData
 	{
 		// IMPORTANT: When entries are added here, materials that use data indices after these have to be updated!
@@ -239,6 +220,9 @@ protected:
 	};
 
 	// ~Variables
+	// The root static mesh component of the brick, not necessarily used for every brick
+	TBrickEditorComponentPtr<UBrickStaticMeshComponent> StaticMeshComponent;
+
 	// All connections that involve this brick
 	UPROPERTY(Transient)
 	TArray<UBrickConnection*> BrickConnections;
@@ -274,11 +258,11 @@ protected:
 	uint16 bClusterContainsRCBrick : 1;
 	// Whether there are any fluid dynamic elements on this cluster
 	uint16 bClusterHasFluidDynamicElements : 1;
-	// Whether the part root should currently simulate physics
-	uint16 bPartRootSimulatePhysics : 1;
-	// Whether the brick is currently connected to the root brick
+	// Used on part roots to indicate if they should simulate physics when initialized
+	uint16 bInitPartRootSimulatePhysics : 1;
+	// Whether the bricks is currently connected to the root brick
 	uint16 bIsConnectedToRoot : 1;
-	// Whether the brick is currently controllable, i.e. connected to the root brick or an RC brick
+	// Whether the bricks is currently controllable, i.e. connected to the root brick or an RC brick
 	uint16 bIsControllable : 1;
 	// Whether the brick is connected to any fuel tanks with fuel
 	uint16 bHasAnyFuel : 1;
@@ -305,9 +289,9 @@ protected:
 	// Physical material used for this Brick
 	UPROPERTY(EditDefaultsOnly, Category = Brick)
 	UBrickMaterial* BrickMaterial;
-	// Custom color of the brick
+	// The custom color of the brick
 	UPROPERTY(EditDefaultsOnly, Category = Brick)
-	FColor BrickColor;
+	FBrickColorWithAlpha BrickColor;
 	// Texture pattern for this brick
 	UPROPERTY(EditDefaultsOnly, Category = Brick)
 	TSubclassOf<UBrickPattern> BrickPattern;
@@ -339,7 +323,7 @@ public:
 	// ~Super Interface
 	virtual void OnViewModeChanged(EBrickEditorViewMode NewMode) override;
 	virtual void OnIsHiddenInEditorChanged() override;
-	virtual void OnMirrorBrickEditorObject(EAxis::Type MirrorAxis) override;
+	virtual void OnMirrorBrickEditorObject(EBrickEditorMirrorMode MirrorMode) override;
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void PostLoadBrickEditorObject(FBrickRigsSaveVersion Version, const FLegacyBrickEditorObjectClassID& LegacyClassId, const FBrickEditorReferenceResolver* ReferenceResolver) override;
 	virtual void PostInitializeBrickEditorObject() override;
@@ -353,12 +337,11 @@ public:
 	virtual float CalcBrickEditorObjectPrice() const override;
 	virtual bool GetBrickEditorObjectLocalBounds(FVector& OutBoundsMin, FVector& OutBoundsMax) const override;
 	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	virtual void UpdateEditorVisualization() override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FBrickEditorParams>();
+		return MakeUnique<FBrickEditorParams>();
 	}
 
 	// ~Super Interface
@@ -376,23 +359,11 @@ public:
 	UFUNCTION(BlueprintPure)
 	const UBrickVehicleStaticInfo* GetVehicleStaticInfo() const;
 
-	// Returns the root component cast to a static mesh
-	UBrickStaticMeshComponent* GetStaticMeshComponent() const;
-
-	// Returns the static mesh to use for the root component
-	virtual UStaticMesh* GetStaticMesh() const;
-
-	// Returns the body setup to use
-	virtual UBodySetup* GetBodySetup() const;
-
-	// Called by the static mesh component to calculate the local bounds
-	virtual FBoxSphereBounds CalcStaticMeshBounds() const;
+	// Called after connections have been created and activated
+	virtual void PostInitializeBrickConnections();
 
 	// Used to gather slots and the default loadout for the vehicle inventory
 	virtual void SetupVehicleInventory(FInventoryProperties& OutProperties, FInventoryLoadout& OutLoadout);
-
-	// Called after the vehicle has been constructed
-	virtual void PostConstructVehicle();
 
 	// Called from the vehicle when any CVar has changed, testing only
 	virtual void OnCVarChanged();
@@ -433,10 +404,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void EndPlay();
 
-	// Called when creating the root mesh component
-	virtual void SetupCreateMeshComponentParams(FBrickEditorMeshComponentParams& Params);
-
-	// Called when creating the root static mesh component
+	// Can be used to customize the static mesh component creation
 	virtual void SetupCreateStaticMeshComponentParams(FBrickStaticMeshComponentParams& Params);
 
 	// Updates the collision profile settings if needed
@@ -528,12 +496,11 @@ public:
 		return bIsCreatingPhysicsState;
 	}
 
+protected:
 	// Lets the root component create its physics state
 	void CreatePhysicsState();
 
-	// Updates the physics properties of the part root
-	void PostShapeChange();
-
+public:
 	struct FTickFluidDynamicsParams
 	{
 		const float DeltaTime;
@@ -574,9 +541,6 @@ protected:
 
 	// Callback for the body instance
 	virtual void OnCalculateMassProperties(FBodyInstance* BodyInstance, PxMassProperties& OutMassProps, FTransform& OutMassTransform);
-
-	// Calculates mass properties based on the shapes of the brick
-	virtual void CalcMassPropertiesFromShapes(const FBodyInstance* BodyInstance, UBrickPhysicalMaterial* PhysMaterial, float MassScale, PxMassProperties& OutMassProps) const;
 
 public:
 	// Returns the physics body volume scale to use when spawned
@@ -676,9 +640,9 @@ public:
 	virtual const TArray<FConnectorField>& GetBrickConnectors() const;
 
 	// Can be overridden to highlight directions on the connector visualization
-	virtual uint8 GetFocusedConnectorAxisFlags() const
+	virtual TTuple<EAxis::Type, EConnectorDirection> GetFocusedConnectorAxis() const
 	{
-		return 0;
+		return MakeTuple(EAxis::None, EConnectorDirection::Max);
 	}
 
 	// Get the maximum distance of a connector nob on this brick
@@ -709,8 +673,8 @@ public:
 	// Whether this part is connected to any external one
 	bool IsConnectedToExternalPart() const
 	{
-		const auto& RootParams = GetBrickPartRootParams();
-		return RootParams.IsValid() && RootParams->ExternalPartConnections.Num() > 0;
+		const auto& RootParams = GetBrickPartRootOrSelf()->PartRootParams;
+		return RootParams.IsValid() && GetBrickPartRootOrSelf()->PartRootParams->ExternalPartConnections.Num() > 0;
 	}
 
 	// Returns true if there are multiple bricks in the cluster
@@ -759,16 +723,13 @@ public:
 			auto OutNum = 0;
 			((UBrick*)this)->ForEachConnectedBrick<UBrick, true, true, true, false>([&](auto* Brick)
 			{
-				const auto& RootParams = Brick->GetBrickPartRootParams();
-				OutNum += RootParams.IsValid() ? Brick->PartRootParams->Children.Num() + 1 : 0;
+				OutNum += Brick->PartRootParams->Children.Num() + 1;
 			});
 
 			// Subtract this brick
 			return OutNum - 1;
 		}
-
-		const auto& RootParams = GetBrickPartRootParams();
-		return RootParams.IsValid() ? RootParams->Children.Num() : 0;
+		return GetBrickPartRootOrSelf()->PartRootParams->Children.Num();
 	}
 
 	// Gets all directly and indirectly connected bricks
@@ -794,36 +755,28 @@ public:
 
 		if (bChildren)
 		{
-			if (OwnPartRoot->PartRootParams.IsValid())
+			for (auto ChildBrick : OwnPartRoot->PartRootParams->Children)
 			{
-				for (auto ChildBrick : OwnPartRoot->PartRootParams->Children)
-				{
-					ForEachConnectedBrickInternal<BrickType>(ChildBrick, Function);
-				}
+				ForEachConnectedBrickInternal<BrickType>(ChildBrick, Function);
 			}
 		}
 
 		if (bCluster && (bChildRoots || bChildren))
 		{
-			const auto* OwnClusterRoot = GetBrickClusterRootOrSelf();
-			if (OwnClusterRoot->IsBrickClusterRoot())
-			{
-				for (auto PartRoot : OwnClusterRoot->PartRootParams->ClusterRootParams->ChildPartRoots)
-				{
-					if (bChildRoots)
-					{
-						ForEachConnectedBrickInternal<BrickType>(PartRoot, Function);
-					}
+			const UBrick* OwnClusterRoot = GetBrickClusterRootOrSelf();
 
-					if (bChildren)
+			for (auto PartRoot : OwnClusterRoot->PartRootParams->ClusterRootParams->ChildPartRoots)
+			{
+				if (bChildRoots)
+				{
+					ForEachConnectedBrickInternal<BrickType>(PartRoot, Function);
+				}
+
+				if (bChildren)
+				{
+					for (auto ChildBrick : PartRoot->PartRootParams->Children)
 					{
-						if (PartRoot->IsBrickPartRoot())
-						{
-							for (auto ChildBrick : PartRoot->PartRootParams->Children)
-							{
-								ForEachConnectedBrickInternal<BrickType>(ChildBrick, Function);
-							}
-						}
+						ForEachConnectedBrickInternal<BrickType>(ChildBrick, Function);
 					}
 				}
 			}
@@ -860,14 +813,11 @@ protected:
 		}
 
 		// Check our children
-		if (OwnPartRoot->IsBrickPartRoot())
+		for (const auto* ChildBrick : OwnPartRoot->PartRootParams->Children)
 		{
-			for (const auto* ChildBrick : OwnPartRoot->PartRootParams->Children)
+			if (Function(ChildBrick))
 			{
-				if (Function(ChildBrick))
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 
@@ -875,24 +825,18 @@ protected:
 		{
 			// Check the cluster children
 			const auto* OwnClusterRoot = GetBrickClusterRootOrSelf();
-			if (OwnClusterRoot->IsBrickClusterRoot())
+			for (const auto* PartRoot : OwnClusterRoot->PartRootParams->ClusterRootParams->ChildPartRoots)
 			{
-				for (const auto* PartRoot : OwnClusterRoot->PartRootParams->ClusterRootParams->ChildPartRoots)
+				if (Function(PartRoot))
 				{
-					if (Function(PartRoot))
+					return true;
+				}
+
+				for (const auto* ChildBrick : PartRoot->PartRootParams->Children)
+				{
+					if (Function(ChildBrick))
 					{
 						return true;
-					}
-
-					if (PartRoot->IsBrickPartRoot())
-					{
-						for (const auto* ChildBrick : PartRoot->PartRootParams->Children)
-						{
-							if (Function(ChildBrick))
-							{
-								return true;
-							}
-						}
 					}
 				}
 			}
@@ -1083,15 +1027,12 @@ public:
 	// Lets the part root enable or disable physics as needed, returns true if the flag was changed
 	bool SetPartRootSimulatePhysics(bool bNewSimulate);
 
-	// Enables or disables physics if needed, returns true if it changed
-	bool UpdatePartRootSimulatePhysics();
-
 	// Called on the part root when the pin mode has changed, returns whether simulate physics has changed
 	bool OnPinModeChanged(bool bAllPinned, bool bNewSimulate);
 
 private:
 	// Called after bricks have been attached or detached
-	void UpdatePartRoot(bool bInHasAnyFuel, bool& bOutHasAnyFluidDynamicElements);
+	void UpdatePartRoot(bool bInInitializeBricks, bool bInHasAnyFuel, bool& bOutHasAnyFluidDynamicElements);
 
 	// Ends this brick as the part root
 	void UninitializePartRoot();
@@ -1100,9 +1041,8 @@ private:
 	void DetachPartRootChildren(const TArray<UBrick*>& NewChildren);
 
 	// Attaches the brick to a new part root
-	void AttachToPartRoot(UBrick* InPartRoot);
+	void AttachToPartRoot(UBrick* InPartRoot, bool bIsInitializing);
 
-public:
 	// Attaches and welds the root component
 	void AttachRootComponentToPartRoot();
 
@@ -1146,9 +1086,10 @@ public:
 	}
 
 	// Get the part root parameters instance
-	const TUniquePtr<FBrickPartRootParams>& GetBrickPartRootParams() const
+	const auto& GetBrickPartRootParams() const
 	{
-		return GetBrickPartRootOrSelf()->PartRootParams;
+		check(IsBrickPartRoot());
+		return PartRootParams;
 	}
 
 	// Returns the brick this brick is attached to
@@ -1204,7 +1145,7 @@ public:
 	void SetClusterRootChildParts(const TArray<UBrick*>& NewChildParts, bool bBricksAddedOrRemoved);
 
 	// Updates the cluster root and all its child parts
-	void UpdateClusterRoot(bool bInIsConnectedToRoot, TArray<FBrickEditorObjectID>& ClusterRootBricks, TArray<FBrickEditorObjectID>& ClusterRootBricksWithFluidDynamics);
+	void UpdateClusterRoot(bool bInInitializeBricks, bool bInIsConnectedToRoot, TArray<FBrickEditorObjectID>& ClusterRootBricks, TArray<FBrickEditorObjectID>& ClusterRootBricksWithFluidDynamics);
 
 private:
 	// Ends this brick as the cluster root
@@ -1277,9 +1218,6 @@ protected:
 	// Updates the material instance parameters
 	virtual void UpdateBrickMaterial();
 
-	// Returns the number of material slots on the root component
-	virtual int32 GetNumMaterialSlots() const;
-
 	// Used to assign materials
 	template <typename T>
 	void AssignBrickMaterials(T Container, int32 NumMaterials) const
@@ -1332,7 +1270,7 @@ protected:
 		else
 		{
 			// Use white for the burnt pattern
-			const auto NewColor = IsBrickBurnt() ? FLinearColor::White : FLinearColor(BrickColor);
+			const auto NewColor = IsBrickBurnt() ? FLinearColor::White : BrickColor.ToLinearRGB();
 			Container->SetCustomPrimitiveDataVector4(Color, NewColor);
 
 			// Add the transform vectors
@@ -1587,13 +1525,8 @@ public:
 	// Whether the cluster is on fire, this may only be called on the cluster root
 	bool IsClusterRootOnFire() const
 	{
-		if (IsBrickClusterRoot())
-		{
-			const auto& FireParams = PartRootParams->ClusterRootParams->FireParams;
-			return FireParams.IsValid() && FireParams->bIsClusterOnFire && FireParams->BricksOnFire.Num();
-		}
-
-		return false;
+		const auto& FireParams = PartRootParams->ClusterRootParams->FireParams;
+		return FireParams.IsValid() && FireParams->bIsClusterOnFire && FireParams->BricksOnFire.Num();
 	}
 
 	// Used by the fire spawn module to initialize the location and velocity of fire particles
@@ -1631,43 +1564,22 @@ protected:
 	virtual void ReceiveDamageInternal(int32 DamageDepth, float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
 	// ~Damage
 
-public:
 	// ~Fuel
-	// Returns whether this brick is a fuel tank
-	bool IsFuelTank() const
+	// Can be implemented by fuel tanks
+	virtual bool GatherFuelLevel(float& InOutLevel, float& InOutCapacity, int32& InOutNum) const
 	{
-		return GetFuelTankRuntimeParams() != nullptr;
+		return false;
 	}
 
-protected:
-	// Implement for fuel tanks
-	virtual const FFuelTankRuntimeParams* GetFuelTankRuntimeParams() const
+	// Used to commit the current fuel level based on the amount consumed by the cluster
+	virtual void UpdateFuelLevel()
 	{
-		return nullptr;
 	}
 
-public:
-	// Returns the total fuel capacity of the brick
-	virtual float GetFuelCapacity() const;
-
-	// Returns the fuel type stored in the brick
-	virtual TSubclassOf<UExplosiveMaterial> GetFuelType() const;
-
-	// Helper to return the CDO of the fuel type class
-	const UExplosiveMaterial* GetFuelTypeCDO() const;
-
-	// Returns the current fuel level of the brick
-	float GetFuelLevel() const;
-
-	// Blows up this brick, assuming that it's a fuel tank
-	void ExplodeFuelTank();
-
-protected:
-	// Consumes the given amount of fuel instantly
-	bool ConsumeFuelInstant(const float Amount);
-
-	// Consumes fuel at the given rate
-	bool ConsumeFuelRate(const float Rate, const float DeltaTime);
+	// Called on every brick when the cluster doesn't have any fuel anymore, server only
+	virtual void MarkFuelTankEmpty()
+	{
+	}
 
 	// Whether the brick is connected to tanks with fuel
 	bool HasAnyFuel() const

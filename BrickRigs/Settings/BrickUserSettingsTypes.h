@@ -71,10 +71,3 @@ enum class EBrickUnitsDisplayMode : uint8
 	BrickUnits,
 	DistanceUnits
 };
-
-UENUM(BlueprintType)
-enum class EColorDisplayMode : uint8
-{
-	HSV,
-	RGB
-};

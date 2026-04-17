@@ -110,5 +110,5 @@ protected:
 	void UpdateNameText();
 
 	// Sets the teams associated with the icon, can also be bound to callbacks
-	void SetIconTeamIds(const TArray<FGenericTeamId>& InTeamIds);
+	void SetIconTeamIds(const TSet<FGenericTeamId>& InTeamIds);
 };

@@ -51,7 +51,7 @@ class BRICKRIGS_API USwitchBrick : public USensorBrickBase
 
 protected:
 	// ~Brick Properties
-	UPROPERTY(EditDefaultsOnly, Category = Switch)
+	UPROPERTY(EditDefaultsOnly, Category = Text)
 	FString SwitchName;
 	UPROPERTY(EditDefaultsOnly, Category = Switch)
 	FVehicleInputChannel InputChannel;
@@ -65,7 +65,7 @@ public:
 
 	// ~Super Interface
 	virtual void SetupCreateRootComponentParams(FBrickEditorPrimitiveComponentParams& Params) override;
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;
 	virtual bool ShouldReplicate() const override;
@@ -96,7 +96,7 @@ private:
 	// Returns the desired parameter value
 	float GetSwitchValueMaterialParameter() const
 	{
-		return FMath::Clamp(OutputChannel.GetValue(), -1.f, 1.f);
+		return OutputChannel.GetValue();
 	}
 
 	// Interaction callbacks

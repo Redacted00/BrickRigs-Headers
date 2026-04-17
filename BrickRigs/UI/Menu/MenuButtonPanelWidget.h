@@ -7,7 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "MenuButtonPanelWidget.generated.h"
 
-class UBrickGridPanel;
+class UGridPanel;
 class UGridSlot;
 
 /**
@@ -28,7 +28,7 @@ class BRICKRIGS_API UMenuButtonPanelWidget : public UUserWidget
 protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* ButtonPanel;
+	UGridPanel* ButtonPanel;
 	// ~Widgets
 
 	// ~Properties
@@ -42,10 +42,6 @@ protected:
 public:
 	// ~Constructor
 	UMenuButtonPanelWidget(const FObjectInitializer& ObjectInitializer);
-
-	// ~Super Interface
-	virtual void NativeDestruct() override;
-	// ~Super Interface
 
 	// Adds a new button to the panel
 	UFUNCTION(BlueprintCallable)

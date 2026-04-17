@@ -112,7 +112,7 @@ private:
 
 public:
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void OnBricksAddedOrRemovedFromCluster() override;
 	virtual void GetCameraBrickView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
 	virtual void BecomeViewTargetSubobject(APlayerController* PC) override;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Misc/BrickColor.h"
 #include "CoreMinimal.h"
 #include "BrickProperty.h"
 
@@ -7,31 +8,17 @@ struct FColorBrickProperty : FBrickProperty
 {
 	DECLARE_BRICK_PROP_BASE(FColorBrickProperty);
 
-private:
-	// ~Variables
-	TBrickPropAttribute<bool> bHasAlphaChannel;
-	// ~Variables
-
-public:
-	// ~Constructor
-	explicit FColorBrickProperty(const TBrickPropAttribute<bool>& bHasAlphaChannel = true)
-		: bHasAlphaChannel(bHasAlphaChannel)
-	{
-	}
-
 	// ~Super Interface
 	virtual bool ComparePropertyValues(const void* A, const void* B) const override
 	{
-		return CompareInternal<FColor>(A, B);
+		return HasAlpha() ? CompareInternal<FBrickColorWithAlpha>(A, B) : CompareInternal<FBrickColor>(A, B);
 	}
 
 	virtual bool SerializeProperty(FArchive& Ar, const FBrickPropertyContainer& Container, FBrickRigsSaveVersion Version, const FBrickEditorReferenceResolver* ReferenceResolver) override;
 
 	virtual FString ExportProperty(const FBrickPropertyContainer& Container) const override
 	{
-		auto Value = FColor();
-		GetValue(Container, Value);
-		return Value.ToString();
+		return ExportPropertyInternal<FColorBrickProperty, FBrickColorWithAlpha>(Container);
 	}
 
 	virtual bool CanExportProperty(const FBrickPropertyContainer& Container) const override
@@ -41,8 +28,7 @@ public:
 
 	virtual bool ImportProperty(const FBrickPropertyContainer& Container, const TCHAR* Buffer) const override
 	{
-		auto NewValue = FColor();
-		return NewValue.InitFromString(Buffer) && SetValue(Container, NewValue);
+		return ImportPropertyInternal<FColorBrickProperty, FBrickColorWithAlpha>(Container, Buffer);
 	}
 
 	virtual bool CanImportProperty(const FBrickPropertyContainer& Container, const TCHAR* Buffer) const override
@@ -52,29 +38,38 @@ public:
 
 	// ~Super Interface
 
-	bool GetValue(const FBrickPropertyContainer& Container, FColor& OutValue) const
+	bool GetValue(const FBrickPropertyContainer& Container, FBrickColorWithAlpha& OutValue) const
 	{
-		if (GetValueInternal(Container, OutValue))
+		if (HasAlpha())
 		{
-			// Always set the alpha channel to full if it's not used
-			OutValue.A = HasAlphaChannel(Container) ? OutValue.A : 255;
+			return GetValueInternal(Container, OutValue);
+		}
+		FBrickColor ColorWithoutAlpha;
+		if (GetValueInternal(Container, ColorWithoutAlpha))
+		{
+			OutValue.SetHVS(ColorWithoutAlpha);
 			return true;
 		}
 
 		return false;
 	}
 
-	bool SetValue(const FBrickPropertyContainer& Container, FColor NewValue) const
+	bool SetValue(const FBrickPropertyContainer& Container, FBrickColorWithAlpha NewValue) const
 	{
-		// Don't allow changing the alpha channel if it's not used
-		NewValue.A = HasAlphaChannel(Container) ? NewValue.A : 255;
-		return SetValueInternal(Container, NewValue);
+		if (HasAlpha())
+		{
+			return SetValueInternal(Container, NewValue);
+		}
+		const FBrickColor NewColorWithoutAlpha = NewValue;
+		return SetValueInternal(Container, NewColorWithoutAlpha);
 	}
 
-	bool HasAlphaChannel(const FBrickPropertyContainer& Container) const
+	bool HasAlpha() const
 	{
-		return bHasAlphaChannel.Get(Container).Get(false);
+		const FStructProperty* StructProp = CastFieldChecked<FStructProperty>(Property);
+		return StructProp->Struct == FBrickColorWithAlpha::StaticStruct();
 	}
 };
 
-DECLARE_BRICK_PROP_TYPE(FColorBrickProperty, FColor);
+DECLARE_BRICK_PROP_TYPE(FColorBrickProperty, FBrickColor);
+DECLARE_BRICK_PROP_TYPE(FColorBrickProperty, FBrickColorWithAlpha);

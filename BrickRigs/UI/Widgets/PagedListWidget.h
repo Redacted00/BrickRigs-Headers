@@ -8,7 +8,7 @@
 #include "PagedListWidget.generated.h"
 
 class UPageSelectorWidget;
-class UBrickGridPanel;
+class UGridPanel;
 class UPropertiesPanelWidget;
 class UPagedListHeaderWidget;
 class UScrollBox;
@@ -50,7 +50,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UPageSelectorWidget* PageSelector;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* EntriesPanel;
+	UGridPanel* EntriesPanel;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UPropertiesPanelWidget* PropertiesPanel;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))

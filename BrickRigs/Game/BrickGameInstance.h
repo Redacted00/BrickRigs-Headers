@@ -8,10 +8,9 @@
 #include "FluUGCAsyncTask.h"
 #include "UI/Widgets/WindowManagerWidget.h"
 #include "Interfaces/OnlineSessionInterface.h"
-#include "Misc/FluTimer.h"
+#include "Misc/BrickTimer.h"
 #include "Tickable.h"
 #include "Engine/GameInstance.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "BrickGameInstance.generated.h"
 
 class IPlugin;
@@ -55,13 +54,6 @@ class BRICKRIGS_API UBrickGameInstance : public UGameInstance, public FTickableG
 {
 	GENERATED_BODY()
 
-	enum class ELeaveLevelContext
-	{
-		StartGame,
-		QuitGame,
-		MainMenu
-	};
-
 	DECLARE_MULTICAST_DELEGATE(FOnNetworkError);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnJoinSessionStateChanged, const EJoinSessionState);
 	DECLARE_MULTICAST_DELEGATE(FOnFindSessionsStart);
@@ -72,12 +64,10 @@ class BRICKRIGS_API UBrickGameInstance : public UGameInstance, public FTickableG
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnUGCThumbnailCaptured, const FString&);
 
 	// ~Variables
-	// Timer managed used for real time timers
-	FTimerManager RealTimerManager;
-	FFluRealTimer Timer_FadeOut;
-	FFluRealTimer Timer_PlayNextMenuMusic;
+	FBrickTimer Timer_FadeOut;
+	FBrickTimer Timer_PlayNextMenuMusic;
 	// Handle used to load the menu music
-	FFluAsyncAssetLoader AssetLoader_MenuMusic;
+	FSmartStreamableHandle StreamableHandle_MenuMusic;
 	// Online subsystem delegate handles
 	FDelegateHandle DelegateHandle_FindSessions;
 	FDelegateHandle DelegateHandle_JoinSession;
@@ -91,8 +81,8 @@ class BRICKRIGS_API UBrickGameInstance : public UGameInstance, public FTickableG
 	FEndStreamingPauseDelegate EndStreamingPauseRenderingDelegate;
 	// Current UGC upload percentage
 	float UploadProgress;
-	// Context saved when starting to leave a level
-	ELeaveLevelContext LeaveLevelContext;
+	// Currently active brick timers
+	TArray<FBrickTimer*> BrickTimers;
 
 	// Whether this is the first time the main menu has been opened
 	uint8 bIsFirstTimeInMainMenu : 1;
@@ -114,8 +104,7 @@ class BRICKRIGS_API UBrickGameInstance : public UGameInstance, public FTickableG
 	UPROPERTY(Transient)
 	UWindowManagerWidget* WindowManagerWidget;
 	// Audio component used for the menu and loading screen music
-	UPROPERTY(Transient)
-	UAudioComponent* MusicAudioComponent;
+	TWeakObjectPtr<UAudioComponent> MusicAudioComponent;
 	// Current fade amount of the HUD
 	float HUDFadeAmount;
 
@@ -219,13 +208,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	// ~FTickableGameObject
 
-	// ~Timer Manager
-	auto& GetRealTimeTimerManager()
-	{
-		return RealTimerManager;
-	}
-
-	// ~Timer Manager
+	// ~Brick Timers
+	void RegisterBrickTimer(FBrickTimer* InTimer);
+	void UnregisterBrickTimer(FBrickTimer* InTimer);
+	// ~Brick Timers
 
 	// ~Window Manager
 	// Get the window manager widget
@@ -268,7 +254,7 @@ public:
 
 	// Version that takes an already construct popup params object
 	UFUNCTION(BlueprintCallable)
-	bool OpenPopup(UPARAM(Ref) FPopupHandle& Handle, UPopupParams* PopupParams, bool bToggleOpen = false)
+	bool OpenPopup(FPopupHandle& Handle, UPopupParams* PopupParams, bool bToggleOpen = false)
 	{
 		if (WindowManagerWidget)
 		{
@@ -290,14 +276,14 @@ public:
 
 	// Blueprint version
 	UFUNCTION(BlueprintCallable)
-	bool OpenMessagePopup(UPARAM(Ref) FPopupHandle& Handle, FText Message, bool bCanCancel, FOnPopupClosedScript ClosedDelegate)
+	bool OpenMessagePopup(FPopupHandle& Handle, FText Message, bool bCanCancel, FOnPopupClosedScript ClosedDelegate)
 	{
 		return OpenMessagePopup(Handle, Message, bCanCancel, FOnPopupClosed::CreateUFunction(ClosedDelegate.GetUObject(), ClosedDelegate.GetFunctionName()));
 	}
 
 	// Closes a popup with the given handle
 	UFUNCTION(BlueprintCallable)
-	bool ClosePopup(UPARAM(Ref) FPopupHandle& Handle, EPopupResult Result = EPopupResult::ForceClose)
+	bool ClosePopup(FPopupHandle& Handle, EPopupResult Result = EPopupResult::ForceClose)
 	{
 		return WindowManagerWidget && WindowManagerWidget->ClosePopup(Handle, Result);
 	}
@@ -334,11 +320,9 @@ public:
 
 private:
 	// Fades the players out before quitting the game or going to another level, takes care of unsaved changes an notifying clients
-	void PrepareToLeaveLevel(const ELeaveLevelContext Context, const bool bForceExit = false);
+	void PrepareToLeaveLevel(void (UBrickGameInstance::*Callback)(), bool bForceExit = false);
 	// Called when the fade out has been confirmed by the user
 	void OnLeaveLevelUnsavedChangesPopupClosed(EPopupResult Result);
-	// Callback for the fade out timer
-	void OnFadeOutTimer();
 	// Timer callback for starting a local match
 	void OnStartGameComplete();
 	// Timer callback for when the client has faded out

@@ -40,11 +40,11 @@ class BRICKRIGS_API UDisplayBrick : public UScalableBrick
 
 protected:
 	// ~Brick properties
-	UPROPERTY(EditDefaultsOnly, Category = Text)
+	UPROPERTY(EditDefaultsOnly, Category = Actuator)
 	FVehicleInputChannel InputChannel;
 	UPROPERTY(EditDefaultsOnly, Category = Text)
-	FColor DisplayColor;
-	UPROPERTY(EditDefaultsOnly, Category = Text)
+	FBrickColor DisplayColor;
+	UPROPERTY(EditDefaultsOnly, Category = Actuator)
 	uint8 NumFractionalDigits = 1;
 	// ~Brick properties
 
@@ -52,7 +52,6 @@ public:
 	// ~Super Interface
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void PostInitializeBrickEditorObject() override;
-	virtual void PostConstructVehicle() override;
 	virtual void SetupCreateRootComponentParams(FBrickEditorPrimitiveComponentParams& Params) override;
 	virtual void RepairBrick() override;
 
@@ -98,6 +97,6 @@ private:
 
 	FVector GetDisplayColorParam() const
 	{
-		return !IsSpawned() || IsControllable() ? FVector(FLinearColor(DisplayColor)) : FVector::ZeroVector;
+		return !IsSpawned() || IsControllable() ? FVector(DisplayColor.ToLinearRGB()) : FVector::ZeroVector;
 	}
 };

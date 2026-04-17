@@ -3,45 +3,41 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Bricks/Brick.h"
+#include "Bricks/TankBrick.h"
 #include "FuelConsumerBrick.generated.h"
 
 UCLASS(Abstract)
-class BRICKRIGS_API UFuelConsumerBrickStaticInfo : public UBrickStaticInfo
+class BRICKRIGS_API UFuelConsumerBrickStaticInfo : public UTankBrickBaseStaticInfo
 {
 	GENERATED_BODY()
 
 public:
 	// ~Properties
-	UPROPERTY(EditDefaultsOnly, Category = Fuel)
-	FFuelTankParams FuelTankParams;
-	// Amount of fuel in liters to consume per second
+	// The amount of fuel in liters to consume per second
 	UPROPERTY(EditDefaultsOnly, Category = Fuel)
 	float FuelConsumption;
 	// ~Properties
 
 	// ~Constructor
 	UFuelConsumerBrickStaticInfo();
-
-	// ~Super Interface
-	virtual FFuelTankParams GetFuelTankParams() const override;
-	// ~Super Interface
 };
 
 /**
  * 
  */
 UCLASS(Abstract)
-class BRICKRIGS_API UFuelConsumerBrick : public UBrick
+class BRICKRIGS_API UFuelConsumerBrick : public UTankBrickBase
 {
 	GENERATED_BODY()
 
-	// ~Variables
-	FFuelTankRuntimeParams FuelTankRuntimeParams;
-	// ~Variables
-
 public:
 	// ~Super Interface
-	virtual const FFuelTankRuntimeParams* GetFuelTankRuntimeParams() const override;
+	virtual UClass* GetExplosiveMaterial() const override;
 	// ~Super Interface
+
+	// Consumes the given amount of fuel instantly
+	bool ConsumeFuelInstant(float Amount);
+
+	// Consumes fuel at the given rate
+	bool ConsumeFuelRate(float Rate, float DeltaTime);
 };

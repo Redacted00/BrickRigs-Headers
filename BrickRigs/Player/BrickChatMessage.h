@@ -142,7 +142,10 @@ public:
 
 private:
 	// Returns the chat context, applicable for player messages only
-	EChatContext GetChatContext() const;
+	EChatContext GetChatContext() const
+	{
+		return static_cast<EChatContext>(IntOption);
+	}
 
 	FText GetPlayerMessageText() const;
 	FText GetDeathMessageText() const;

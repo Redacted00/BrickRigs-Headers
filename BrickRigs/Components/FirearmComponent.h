@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/BrickAssetManager.h"
 #include "Components/ActorComponent.h"
 #include "Online/BitfieldSerializer.h"
 #include "Player/ReplicatedHitInfo.h"
@@ -30,8 +31,9 @@ enum class EFireMode : uint8
 	// A new round is automatically loaded
 	Burst,
 	// Auto with limited burst count
-	Auto
+	Auto,
 	// Full auto firing
+	Max
 };
 
 // Chamber state for firearms
@@ -143,10 +145,10 @@ struct FFirearmProperties
 	float BoltCycleTime = 0.1f;
 	// Whether the weapon has a semi fire mode
 	UPROPERTY(EditAnywhere)
-	uint8 bHasSemiMode : 1;
+	uint8 bHasSemiMode : 1 = false;
 	// Whether the weapon has an auto fire mode
 	UPROPERTY(EditAnywhere)
-	uint8 bHasAutoMode : 1;
+	uint8 bHasAutoMode : 1 = false;
 	// If 0, no burst mode, otherwise the weapon has a burst mode with this amount of rounds
 	UPROPERTY(EditAnywhere)
 	uint8 BurstRounds = 0;
@@ -157,8 +159,6 @@ struct FFirearmProperties
 	// ~Constructor
 	FFirearmProperties()
 	{
-		bHasSemiMode = false;
-		bHasAutoMode = false;
 		ProjectileParams.InitialSpeed = 80000.f;
 		ProjectileParams.MaxRange = 200000.f;
 		ProjectileParams.DropoffStart = 1000.f;
@@ -183,8 +183,8 @@ class BRICKRIGS_API UFirearmComponent : public UActorComponent
 
 	// ~Variables
 	// Used for async loading of the fire effects
-	FFluAsyncAssetLoader AssetLoader_FireEmitter;
-	FFluAsyncAssetLoader AssetLoader_FireSound;
+	FSmartStreamableHandle StreamableHandle_FireEmitter;
+	FSmartStreamableHandle StreamableHandle_FireSound;
 	// Timer for reverting the firearm state when it failed to be replicated by the server
 	FTimerHandle TimerHandle_RevertFirearmState;
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Misc/FluTimer.h"
+#include "Misc/BrickTimer.h"
 #include "Online/KickedPlayer.h"
 #include "OnlineSessionSettings.h"
 #include "GameFramework/GameSession.h"
@@ -42,7 +42,7 @@ private:
 	// Delegate handle for the session creation process
 	FDelegateHandle DelegateHandle_CreateSession;
 	// Timer used for updating the session info
-	FFluRealTimer Timer_UpdateSession;
+	FBrickTimer Timer_UpdateSession;
 	// Indicates what parts of the session to update next
 	EUpdateSessionFlags PendingSessionUpdateFlags;
 	// The admin password of the server
@@ -143,7 +143,7 @@ public:
 	// ~Session
 	// Returns the online session interface to use
 	static IOnlineSessionPtr GetSessionInterface();
-
+	
 	// Queues an update to the session data
 	void QueueOnlineSessionUpdate(EUpdateSessionFlags InUpdateFlags);
 

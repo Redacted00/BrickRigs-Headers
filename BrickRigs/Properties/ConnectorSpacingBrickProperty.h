@@ -4,19 +4,13 @@
 #include "CoreMinimal.h"
 #include "BrickProperty.h"
 
-struct FConnectorSpacingBrickProperty : FBrickProperty
+struct FConnectorSpacingBrickProperty : public FBrickProperty
 {
 	DECLARE_BRICK_PROP_BASE(FConnectorSpacingBrickProperty);
 
-private:
-	// ~Variables
-	TBrickPropAttribute<FConnectorSpacingAxisFlags> AxisFlags;
-	// ~Variables
-
 public:
 	// ~Constructor
-	FConnectorSpacingBrickProperty(const TBrickPropAttribute<FConnectorSpacingAxisFlags>& AxisFlags = {})
-		: AxisFlags(AxisFlags)
+	FConnectorSpacingBrickProperty()
 	{
 	}
 
@@ -56,11 +50,6 @@ public:
 	bool SetValue(const FBrickPropertyContainer& Container, FScalableBrickConnectorSpacing NewValue) const
 	{
 		return SetValueInternal(Container, NewValue);
-	}
-
-	uint8 GetAxisFlags(const FBrickPropertyContainer& Container) const
-	{
-		return AxisFlags.Get(Container).Get(MAX_uint8);
 	}
 };
 

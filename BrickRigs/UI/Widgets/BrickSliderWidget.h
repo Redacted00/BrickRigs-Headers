@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "UI/Misc/UIFunctionLibrary.h"
+#include "Settings/BrickUserSettingsTypes.h"
 #include "CoreMinimal.h"
-#include "ButtonWidgetBase.h"
-#include "Misc/ValueChangedEventType.h"
+#include "DraggableButtonWidgetBase.h"
 #include "BrickSliderWidget.generated.h"
 
 class UBrickTextBoxWidget;
@@ -22,29 +23,16 @@ enum class EBrickSliderGridSnapMode : uint8
  *
  */
 UCLASS(Abstract)
-class BRICKRIGS_API UBrickSliderWidget : public UButtonWidgetBase
+class BRICKRIGS_API UBrickSliderWidget : public UDraggableButtonWidgetBase
 {
 	GENERATED_BODY()
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSliderValueChanged, float, Value, EValueChangedEventType, EventType);
 
-	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSliderValueNativeChanged, float, EValueChangedEventType);
-
-	// ~Variables
-	// Whether the mouse is being dragged
-	uint8 bIsDraggingSlider : 1;
-	// Non grid snapped value used while dragging
-	float DragSliderValue = 0.f;
-	// Last frame in which the mouse was moved
-	uint64 LastMouseMoveFrame = 0;
-	// ~Variables
-
 protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UBrickTextBoxWidget* TextBox;
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickBorder* FillBorder;
 	// ~Widgets
 
 	// ~Properties
@@ -84,7 +72,6 @@ public:
 	// ~Delegates
 	UPROPERTY(BlueprintAssignable)
 	FOnSliderValueChanged OnValueChangedDelegate;
-	FOnSliderValueNativeChanged OnValueChangedNativeDelegate;
 	// ~Delegates
 
 	// ~Constructor
@@ -92,18 +79,20 @@ public:
 
 	// ~Super Interface
 	virtual bool Initialize() override;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 	virtual void NativeOnFocusChanging(const FWeakWidgetPath& PreviousFocusPath, const FWidgetPath& NewWidgetPath, const FFocusEvent& InFocusEvent) override;
-	virtual FCursorReply NativeOnCursorQuery(const FGeometry& InGeometry, const FPointerEvent& InCursorEvent) override;
-	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 	virtual FReply NativeOnKeyUp(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 	virtual bool SetIsPressed(bool bNewPressed) override;
+	virtual void SetIsDraggingContent(bool bNewDragging) override;
 	virtual EBrickUIStyleState GetButtonStyleState() const override;
 	virtual void OnUpdateContentStyle_Implementation(EBrickUIColorStyle InColorStyle, EBrickUIStyleState InStyleState) override;
-	virtual FReply OnDragged(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void OnPressed(const FGeometry* InGeometry, const FPointerEvent* InMouseEvent, bool bDoubleClick) override;
-	virtual void OnReleased(const FGeometry* InGeometry, const FPointerEvent* InMouseEvent, bool bDoubleClick, bool bCancelled) override;
-	virtual bool ShouldCaptureHighPrecisionMouseMovement() const override;
+	virtual float GetTargetAnimPosition() const override;
+	virtual float MouseMovementToAnimPosition(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, bool& bOutLockCursorToWidget) override;
+	virtual void ApplyAnimPosition(float Pos, EValueChangedEventType EventType) override;
+	virtual void CommitClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, bool bDoubleClick) override;
+	virtual void UpdateAnimPosition() override;
 	// ~Super Interface
 
 	// Change the current value
@@ -140,26 +129,34 @@ protected:
 	// ~Blueprint Interface
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateSliderPosition(float NewValue);
-	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateIsDragging(const bool bIsDragging);
 	// ~Blueprint Interface
 
 private:
 	// Handles key up and down events
 	FReply HandleKeyEvent(const FKeyEvent& InKeyEvent, bool bWasPressed);
+	// Callback for the user settings
+	UFUNCTION()
+	void OnMeasurementSystemChanged(EMeasurementSystem NewSystem);
 	// Callback for the text box
 	UFUNCTION()
 	void OnTextChanged(const FText& NewText, EValueChangedEventType EventType);
-	// Update the displayed value
-	void UpdateSliderValue(const bool bOverrideTyping = false, const bool bIsTyping = false);
+	// Conver the given value to an anim position
+	float ValueToAnimPosition(float InValue) const;
+	// Convert the anim position to an absolute value
+	float AnimPositionToValue(float InPos) const;
+	// Update the displayed text only
+	void UpdateSliderText(bool bOverrideTyping = false, bool bIsTyping = false);
 	// Commit a new value, call all notifies
 	bool CommitValue(float NewValue);
 	// Internally set and commit a new value
 	bool SetValueInternal(float NewValue, bool bClampValue, bool bCallNotify, EValueChangedEventType EventType);
 	// Returns the value step to use
-	float GetEffectiveValueStep() const;
-	// Returns the value range
-	FFloatInterval GetEffectiveValueRange() const;
-	// Returns the grid snap mode to use
-	EBrickSliderGridSnapMode GetEffectiveGridSnapMode() const;
+	float GetEffectiveValueStep() const
+	{
+		if (ValueStep > 0.f)
+		{
+			return ValueStep;
+		}
+		return UUIFunctionLibrary::GetDefaultValueStep(ValueType);
+	}
 };

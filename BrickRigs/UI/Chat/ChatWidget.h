@@ -2,11 +2,12 @@
 
 #pragma once
 
+#include "UI/Misc/BrickUITimer.h"
 #include "Misc/ValueChangedEventType.h"
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Misc/FluTimer.h"
 #include "Player/BrickChatMessage.h"
+#include "UI/Menu/Popups/PopupParams.h"
 #include "ChatWidget.generated.h"
 
 class UGameOverlayWidget;
@@ -25,7 +26,7 @@ class BRICKRIGS_API UChatWidget : public UUserWidget
 
 	// ~Variables
 	// Used to hide the chat after a few seconds of inactivity
-	FFluUITimer Timer_CloseChat;
+	FBrickUITimer Timer_CloseChat;
 	// The parent game overlay
 	TWeakObjectPtr<UGameOverlayWidget> GameOverlay;
 	// List of all message widgets

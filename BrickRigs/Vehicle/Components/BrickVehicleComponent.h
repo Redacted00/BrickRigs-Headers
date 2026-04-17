@@ -21,6 +21,8 @@ class BRICKRIGS_API UBrickVehicleComponent : public UBrickEditorInterfaceCompone
 	// ~Variables
 	// List of registered tick functions
 	TArray<FBrickTickFunction*> BrickTickFunctions;
+	// The seat that is assigned as the driver seat
+	TBrickEditorObjectPtr<USeatBrick> DriverSeat;
 
 public:
 	// Used to resolve deprecated seat channels during load
@@ -35,6 +37,8 @@ public:
 	// ~Super Interface
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual EUGCType GetUGCType() const override;
+	virtual void PostClearItem() override;
+	virtual bool SaveToArchive(FArchive& Ar) override;
 	virtual EBrickEditorLoadResult PostLoadFromArchive(FArchive& Ar, const FBrickEditorSaveHeader& Header, bool bImport, const FBrickEditorReferenceResolver& ReferenceResolver) override;
 	virtual void PostLoadBrickEditorObject(const TArray<UBrickEditorObject*>& NewObjects, FBrickRigsSaveVersion Version, const FBrickEditorReferenceResolver* ReferenceResolver) override;
 	virtual void PreInitializeBrickEditorObjects() override;
@@ -49,8 +53,23 @@ public:
 	// ~Vehicles
 
 	// ~Bricks
+	// Get the brick assigned as the driver seat
+	USeatBrick* GetDriverSeat() const
+	{
+		return DriverSeat.Get();
+	}
+
 	// Returns a random seat to use as the driver seat
 	USeatBrick* GetDefaultDriverSeat() const;
+
+	// Get the ID of the driver seat
+	const FBrickEditorObjectID& GetDriverSeatID() const
+	{
+		return DriverSeat.GetID();
+	}
+
+	// Assigns a new driver seat, returns true if the seat has been set
+	bool SetDriverSeat(USeatBrick* InSeat);
 	// ~Bricks
 
 	// ~Ticking

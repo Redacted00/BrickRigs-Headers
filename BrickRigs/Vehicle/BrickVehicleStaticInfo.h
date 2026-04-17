@@ -22,13 +22,6 @@ class BRICKRIGS_API UBrickVehicleStaticInfo : public UObject
 
 public:
 	// ~Properties
-	// Maximum time allowed to spend on constructing a vehicle per frame
-	UPROPERTY(EditDefaultsOnly, Category = Spawning)
-	float MaxConstructionLoopFrameTime = 0.01f;
-	// Maximum time allowed to spend on construction on total
-	UPROPERTY(EditDefaultsOnly, Category = Spawning)
-	float MaxConstructionTime = 10.f;
-
 	// Maximum distance at which collision and sliding effects are spawned
 	UPROPERTY(EditDefaultsOnly, Category = Collision)
 	float MaxCollisionEffectSpawnDist;

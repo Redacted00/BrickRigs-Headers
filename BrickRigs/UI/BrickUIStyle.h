@@ -7,7 +7,6 @@
 #include "Properties/ObjectPropertyItemInterface.h"
 #include "Misc/BrickUIStyleTypes.h"
 #include "CoreMinimal.h"
-#include "Misc/FluEnumStatics.h"
 #include "BrickUIStyle.generated.h"
 
 /**
@@ -193,11 +192,7 @@ FORCEINLINE const FLinearColor& UBrickUIStyle::GetColor(EBrickUIColorStyle Color
 
 FORCEINLINE const FTextBlockStyle& UBrickUIStyle::GetTextStyle(EBrickUITextStyle TextStyle, const FTextBlockStyle& Fallback) const
 {
-	if (TextStyle >= EBrickUITextStyle::Custom)
-	{
-		return Fallback;
-	}
-	return TextStyles[static_cast<int32>(TextStyle)];
+	return GetTextStyleMember<FTextBlockStyle, nullptr>(TextStyle, Fallback);
 }
 
 FORCEINLINE float UBrickUIStyle::GetSpacing(EBrickUISpacingStyle SpacingStyle, float Fallback) const
@@ -246,7 +241,8 @@ FORCEINLINE FText UBrickUIStyle::FormatRichTextStyle(EBrickUITextStyle Style, co
 
 FORCEINLINE FString UBrickUIStyle::TextStyleToString(EBrickUITextStyle InStyle)
 {
-	return FFluEnumStatics::ValueToString(InStyle);
+	static auto TextStyleEnum = StaticEnum<EBrickUITextStyle>();
+	return TextStyleEnum->GetNameStringByIndex(static_cast<int32>(InStyle));
 }
 
 FORCEINLINE EBrickUIStyleState UBrickUIStyle::GetButtonStyleState(bool bIsPressed, bool bIsFocused, bool bIsSelected)

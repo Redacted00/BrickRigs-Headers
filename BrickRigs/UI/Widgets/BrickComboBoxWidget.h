@@ -11,7 +11,7 @@ class UBrickButtonWidget;
 class UBrickComboBoxMenuWidget;
 class UBrickComboBoxItemContainerWidget;
 class UBrickComboBoxItemWidget;
-class UBrickGridPanel;
+class UGridPanel;
 
 /**
  * Base class for all combo boxes
@@ -51,7 +51,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Meta = (BindWidgetOptional))
 	UBrickButtonWidget* Button;
 	UPROPERTY(BlueprintReadOnly, Meta = (BindWidgetOptional))
-	UBrickGridPanel* ItemsPanel;
+	UGridPanel* ItemsPanel;
 	// ~Widgets
 
 public:
@@ -71,7 +71,7 @@ public:
 	// ~Properties
 
 	// ~Delegates
-	UPROPERTY(EditAnywhere, Meta = (IsBindableEvent = "True"))
+	UPROPERTY(EditAnywhere, Meta = (IsBindableEvent="True"))
 	FOnInitializeItem OnInitializeItemDelegate;
 	UPROPERTY(BlueprintAssignable)
 	FOnItemSelected OnItemSelectedDelegate;

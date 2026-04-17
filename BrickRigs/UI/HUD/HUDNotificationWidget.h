@@ -3,9 +3,9 @@
 #pragma once
 
 #include "UI/BrickUIStyle.h"
+#include "UI/Misc/BrickUITimer.h"
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Misc/FluTimer.h"
 #include "HUDNotificationWidget.generated.h"
 
 class UGameOverlayWidget;
@@ -25,7 +25,7 @@ public:
 
 private:
 	// ~Variables
-	FFluUITimer Timer_FadeOut;
+	FBrickUITimer Timer_FadeOut;
 	// Reference to the owning game overlay
 	TWeakObjectPtr<UGameOverlayWidget> GameOverlay;
 	// Whether the notification is currently fading in or has already faded in

@@ -88,28 +88,27 @@ public:
 	);
 #undef TAG
 
-	static const FGameplayTag& GetItemTag(const EItemTag InTag)
+	static const FGameplayTag& GetItemTag(EItemTag InTag)
 	{
 		return Get().ItemTags[InTag];
 	}
 
-	static const FGameplayTag& GetAttachmentTag(const EAttachmentTag InTag)
+	static const FGameplayTag& GetAttachmentTag(EAttachmentTag InTag)
 	{
 		return Get().AttachmentTags[InTag];
 	}
 
-	static const FGameplayTag& GetWearableTag(const EWearableTag InTag)
+	static const FGameplayTag& GetWearableTag(EWearableTag InTag)
 	{
 		return Get().WearableTags[InTag];
 	}
 
-	static const FGameplayTag& GetBrickTag(const UClass* InBrickClass)
+	static const FGameplayTag& GetBrickTag(UClass* InBrickClass)
 	{
-		const auto* FoundTag = Get().BrickTags.Find(InBrickClass);
-		return FoundTag ? *FoundTag : Get().BrickTags[UBrickStaticInfo::StaticClass()];
+		return Get().BrickTags[InBrickClass];
 	}
 
-	static const FGameplayTag& GetScalableBrickTag(const EScalableBrickShape InBrickShape)
+	static const FGameplayTag& GetScalableBrickTag(EScalableBrickShape InBrickShape)
 	{
 		return Get().ScalableBrickTags.Contains(InBrickShape) ? Get().ScalableBrickTags[InBrickShape] : FGameplayTag::EmptyTag;
 	}
@@ -122,15 +121,15 @@ private:
 	FBrickGameplayTags();
 
 	template <typename EnumType>
-	static void RegisterEnum(const FString& CategoryName, TMap<EnumType, FGameplayTag>& Map)
+	void RegisterEnum(const FString& CategoryName, TMap<EnumType, FGameplayTag>& Map)
 	{
-		auto* Enum = StaticEnum<EnumType>();
-		for (auto i = 0; i < Enum->GetMaxEnumValue(); ++i)
+		UEnum* Enum = StaticEnum<EnumType>();
+		for (int32 i = 0; i < Enum->GetMaxEnumValue(); ++i)
 		{
 			FString EnumName = Enum->GetNameStringByIndex(i);
 			EnumName.ReplaceCharInline('_', '.', ESearchCase::CaseSensitive);
-			const auto Tag = CategoryName + TEXT(".") + EnumName;
-			const auto NewTag = UGameplayTagsManager::Get().AddNativeGameplayTag(*Tag);
+			const FString Tag = CategoryName + TEXT(".") + EnumName;
+			const FGameplayTag NewTag = UGameplayTagsManager::Get().AddNativeGameplayTag(*Tag);
 			Map.Add(EnumType(i), NewTag);
 		}
 	}

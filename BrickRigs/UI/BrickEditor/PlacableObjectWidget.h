@@ -78,7 +78,7 @@ public:
 	// Initializes the outer editor
 	void SetBrickEditorWidget(UBrickEditorWidget* InWidget);
 	// Initializes the widget as a placable or filter
-	void InitializePlacable(const FSoftClassPath& InPlacableClass, const FBrickEditorObjectFilterRef& InFilter);
+	void InitializePlacable(UClass* InPlacableClass, const FBrickEditorObjectFilterRef& InFilter);
 	// Public accessors
 	auto* GetPlacableClass() const
 	{

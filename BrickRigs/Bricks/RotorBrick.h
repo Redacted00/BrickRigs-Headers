@@ -5,6 +5,7 @@
 #include "Bricks/Brick.h"
 #include "RotorBrick.generated.h"
 
+
 UCLASS(Abstract)
 class BRICKRIGS_API URotorBrickStaticInfo : public UBrickStaticInfo
 {
@@ -33,7 +34,7 @@ private:
 
 public:
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void OnBricksAddedOrRemovedFromCluster() override;
 	// ~Super Interface
 

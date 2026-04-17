@@ -25,16 +25,12 @@ struct FBrickEditorStaticMeshComponentParams : FBrickEditorMeshComponentParams
 {
 	UStaticMesh* StaticMesh;
 	int32 ForcedLodModel;
-	int32 MinLOD;
-	bool bOverrideMinLOD;
 	bool bEvaluateWorldPositionOffset;
 
 	FBrickEditorStaticMeshComponentParams(const UBrickEditorStaticMeshComponent* Default = GetDefault<UBrickEditorStaticMeshComponent>())
 		: FBrickEditorMeshComponentParams(Default),
 		  StaticMesh(Default->GetStaticMesh()),
 		  ForcedLodModel(Default->ForcedLodModel),
-		  MinLOD(Default->MinLOD),
-		  bOverrideMinLOD(Default->bOverrideMinLOD),
 		  bEvaluateWorldPositionOffset(Default->bEvaluateWorldPositionOffset)
 	{
 	}
@@ -45,8 +41,6 @@ struct FBrickEditorStaticMeshComponentParams : FBrickEditorMeshComponentParams
 
 		Comp->SetStaticMesh(StaticMesh);
 		Comp->ForcedLodModel = ForcedLodModel;
-		Comp->MinLOD = MinLOD;
-		Comp->bOverrideMinLOD = bOverrideMinLOD;
 		Comp->bEvaluateWorldPositionOffset = bEvaluateWorldPositionOffset;
 	}
 };

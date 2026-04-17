@@ -65,7 +65,7 @@ protected:
 	// Get the currently accumulated input
 	float GetInputAxisInput(EVehicleInputAxis Axis) const
 	{
-		const auto FoundVal = InputAxesInput.Find(Axis);
+		auto FoundVal = InputAxesInput.Find(Axis);
 		return FoundVal ? *FoundVal : 0.f;
 	}
 
@@ -102,7 +102,7 @@ protected:
 	UFUNCTION()
 	void OnReleasedPinVehicle()
 	{
-		if (HoldKeyTimer_PinVehicle.OnReleased(this))
+		if (HoldKeyTimer_PinVehicle.OnReleased())
 		{
 			OnTappedPinVehicle();
 		}
@@ -197,7 +197,7 @@ protected:
 	UFUNCTION()
 	void OnReleasedCycleFireActionMode()
 	{
-		if (HoldKeyTimer_CycleFireActionMode.OnReleased(this))
+		if (HoldKeyTimer_CycleFireActionMode.OnReleased())
 		{
 			OnTappedCycleFireActionMode();
 		}

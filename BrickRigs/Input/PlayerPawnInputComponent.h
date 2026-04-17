@@ -90,7 +90,7 @@ protected:
 	UFUNCTION()
 	void OnReleasedCycleSlots()
 	{
-		if (HoldKeyTimer_CycleSlots.OnReleased(this))
+		if (HoldKeyTimer_CycleSlots.OnReleased())
 		{
 			OnTappedCycleSlots();
 		}

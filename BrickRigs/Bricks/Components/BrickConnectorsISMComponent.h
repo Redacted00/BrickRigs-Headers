@@ -19,6 +19,7 @@ class BRICKRIGS_API UBrickConnectorsISMComponent : public UInstancedStaticMeshCo
 {
 	GENERATED_BODY()
 
+private:
 	// ~Variables
 	// Cached pointer to the current UI style
 	FBrickUIStyleSafePtr UIStyle;
@@ -52,7 +53,7 @@ public:
 	void SetStyle(EBrickUIColorStyle NewColorStyle, EBrickUIColorStyle NewFocusedColorStyle, EBrickUIStyleState NewStyleState, EBrickUIStyleState NewFocusedStyleState);
 
 	// Adds a list of new connector fields
-	void AddConnectorFields(const TArray<FConnectorField>& InConnectorFields, const uint8 FocusedAxisFlags, const FVector& BoundsSize);
+	void AddConnectorFields(const TArray<FConnectorField>& InConnectorFields, const EAxis::Type FocusedAxis, const EConnectorDirection FocusedDirection, const FVector& BoundsSize);
 	// Removes all connector field instances
 	void ClearConnectorFields();
 
@@ -64,7 +65,7 @@ private:
 };
 
 // NOTE: We deliberately don't inherit from the brick editor ISM component, since we don't want the mesh and other settings to be overridden
-struct FBrickConnectorsISMComponentParams : FBrickEditorPrimitiveComponentParams
+struct FBrickConnectorsISMComponentParams : public FBrickEditorPrimitiveComponentParams
 {
 	EBrickUIColorStyle ColorStyle;
 	EBrickUIColorStyle FocusedColorStyle;

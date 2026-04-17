@@ -4,6 +4,7 @@
 #include "UserIdBrickProperty.h"
 #include "StructBrickProperty.h"
 #include "ColorBrickProperty.h"
+#include "VectorBrickProperty.h"
 #include "DateTimeBrickProperty.h"
 #include "UGCBrickProperty.h"
 #include "ObjectBrickProperty.h"

@@ -24,9 +24,9 @@ private:
 
 public:
 	// Whether the async load has already been requested
-	uint8 bRequestedLoad : 1;
+	uint8 bRequestedLoad : 1 = false;
 	// Whether all assets have been loaded
-	uint8 bLoadComplete : 1;
+	uint8 bLoadComplete : 1 = false;
 	// Pointers to the dynamically created montages, needed to reuse them
 	UPROPERTY(Transient)
 	UAnimMontage* CharacterMontage = nullptr;
@@ -54,13 +54,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	float BlendOutTime = 0.25f;
 	// ~Properties
-
-	// ~Constructor
-	FItemAnimation()
-	{
-		bRequestedLoad = false;
-		bLoadComplete = false;
-	}
 
 	// ~Destructor
 	virtual ~FItemAnimation()

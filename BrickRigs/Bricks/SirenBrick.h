@@ -54,7 +54,7 @@ public:
 	USirenBrick();
 
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
 
 	virtual bool HasAnyInputChannel() const override

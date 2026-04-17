@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "ScalableBrickBase.h"
+#include "Misc/ScalableBrickConnectorSpacing.h"
 #include "Bricks/Brick.h"
 #include "ScalableBrick.generated.h"
 
@@ -32,10 +32,7 @@ enum class EScalableBrickShape : uint8
 	WedgeCorner,
 	Cylinder90R0,
 	Cylinder90R1,
-	Flag,
-	TankCylinder,
-	Button,
-	Flap
+	Flag
 };
 
 USTRUCT(BlueprintType)
@@ -46,20 +43,19 @@ struct FScalableBrickReplacementMesh
 	UPROPERTY(EditAnywhere)
 	UStaticMesh* Mesh = nullptr;
 	UPROPERTY(EditAnywhere)
-	FVector MinSize = FVector::ZeroVector;
+	FBrickSize MinSize;
 };
 
-USTRUCT()
-struct FScalableBrickEditorParams : public FScalableBrickBaseEditorParams
+struct FScalableBrickEditorParams : FBrickEditorParams
 {
-	GENERATED_BODY()
-
-	// Scale axis currently focused
+	// The scale axis currently focused
 	EAxis::Type FocusedScaleAxis = EAxis::None;
+	// The connector direction property that is currently focused
+	EConnectorDirection FocusedConnectorDirection = EConnectorDirection::Max;
 };
 
 UCLASS(Abstract)
-class BRICKRIGS_API UScalableBrickStaticInfo : public UScalableBrickBaseStaticInfo
+class BRICKRIGS_API UScalableBrickStaticInfo : public UBrickStaticInfo
 {
 	GENERATED_BODY()
 
@@ -96,62 +92,71 @@ public:
  *
  */
 UCLASS()
-class BRICKRIGS_API UScalableBrick : public UScalableBrickBase
+class BRICKRIGS_API UScalableBrick : public UBrick
 {
 	GENERATED_BODY()
 
 protected:
 	// ~Variables
+	// Generated array of connectors
+	TArray<FConnectorField> ScalableConnectors;
+	// Cached maximum distance of any connector
+	float MaxScalableConnectorDist;
 	// The lift surface direction
 	uint8 LiftAxisIdx;
 	// ~Variables
 
 	// ~Brick Properties
 	UPROPERTY(EditDefaultsOnly, Category = ScalableBrick)
-	FVector BrickSize;
+	FBrickSize BrickSize;
+	UPROPERTY(EditDefaultsOnly, Category = ScalableBrick)
+	FScalableBrickConnectorSpacing ConnectorSpacing;
 	// ~Brick Properties
 
 public:
+	// ~Constructor
+	UScalableBrick();
+
 	// ~Super Interface
-	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
-	virtual void OnMirrorBrickEditorObject(EAxis::Type MirrorAxis) override;
-	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EAxis::Type MirrorAxis) const override;
+	virtual void OnMirrorBrickEditorObject(EBrickEditorMirrorMode MirrorMode) override;
+	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EBrickEditorMirrorMode MirrorMode) const override;
 	virtual void PostLoadBrickEditorObject(FBrickRigsSaveVersion Version, const FLegacyBrickEditorObjectClassID& LegacyClassId, const FBrickEditorReferenceResolver* ReferenceResolver) override;
+	virtual void SetupCreateStaticMeshComponentParams(FBrickStaticMeshComponentParams& Params) override;
 	virtual bool ShouldShowGenerateLiftProperty() const override;
-	virtual FVector GetBrickEditorObjectSize() const override;
+	virtual void OnCalculateMassProperties(FBodyInstance* BodyInstance, PxMassProperties& OutMassProps, FTransform& OutMassTransform) override;
+	virtual FBrickSize GetBrickEditorObjectSize() const override;
 	virtual void GetFluidDynamicSurface(FFluidDynamicSurface& OutElement, const FTransform& Transform) const override;
-	virtual UStaticMesh* GetStaticMesh() const override;
-	virtual uint8 GetFocusedConnectorAxisFlags() const override;
+	virtual const TArray<FConnectorField>& GetBrickConnectors() const override;
+	virtual float GetMaxConnectorDist() const override;
+	virtual TTuple<EAxis::Type, EConnectorDirection> GetFocusedConnectorAxis() const override;
 	virtual FVector GetRenderScale3D() const override;
 	virtual FVector GetBodySetupScale3D() const override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void PostModifyBrickProperty(const FBrickPropertyChangedEvent& Event) override;
 	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	virtual void UpdateFocusedBrickProperty(const FBrickPropertyFocusEvent& Event) override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FScalableBrickEditorParams>();
+		return MakeUnique<FScalableBrickEditorParams>();
 	}
 
-	virtual void OnGenerateConnectors() override;
 	// ~Super Interface
 
 	// Get the size factor to use
 	FVector GetScalableBrickScale3D() const;
 
 protected:
-	// Callbacks for the size property
-	virtual FVector GetMinBrickSize() const;
-	virtual FVector GetMaxBrickSize() const;
-	virtual EFluAxisLock GetBrickSizeAxisLock() const;
-	// Called after the user changes the size to enforce limits
-	virtual void ConstraintBrickSize();
+	// Returns the mesh that should be used
+	UStaticMesh* GetDesiredStaticMesh() const;
+	// Updates the connectors according to the current shape
+	void GenerateConnectors();
+	// Allows subclasses to modify connectors
+	virtual void OnGenerateConnectors();
 	// Updates the lift surface properties according to the current scale
 	void UpdateAerodynamicLiftSurface();
 	// Returns the size to use when mirrored
-	FVector GetMirroredBrickSize() const;
+	FBrickSize GetMirroredBrickSize() const;
 	// Returns the connector spacing to use when mirrored
 	FScalableBrickConnectorSpacing GetMirroredConnectorSpacing() const;
 };

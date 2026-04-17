@@ -94,7 +94,7 @@ protected:
 	UPROPERTY()
 	TArray<FBrickEditorObjectPtr> IdlerWheels;
 	UPROPERTY()
-	FColor TrackColor;
+	FBrickColorWithAlpha TrackColor;
 	// ~Brick Properties
 
 public:
@@ -103,8 +103,8 @@ public:
 
 	// ~Super Interface
 	virtual void PostInitializeBrickEditorObject() override;
-	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EAxis::Type MirrorAxis) const override;
-	virtual void OnMirrorBrickEditorObject(EAxis::Type MirrorAxis) override;
+	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EBrickEditorMirrorMode MirrorMode) const override;
+	virtual void OnMirrorBrickEditorObject(EBrickEditorMirrorMode MirrorMode) override;
 	virtual void UpdateCustomDepth(bool bEnable, uint8 Stencil) override;
 	virtual void TickBrick(float DeltaTime) override;
 	virtual bool ShouldBrickTick() const override;
@@ -147,7 +147,7 @@ private:
 	template <typename T>
 	void AssignTrackCustomPrimitiveData(T Container)
 	{
-		Container->SetCustomPrimitiveDataVector4(static_cast<int32>(ETrackPrimitiveData::Color), FLinearColor(TrackColor));
+		Container->SetCustomPrimitiveDataVector4(static_cast<int32>(ETrackPrimitiveData::Color), TrackColor.ToLinearRGB());
 		const auto SizeOffset = GetTrackSizeOffset();
 		Container->SetCustomPrimitiveDataFloat(static_cast<int32>(ETrackPrimitiveData::LengthOffset), SizeOffset.X);
 		Container->SetCustomPrimitiveDataFloat(static_cast<int32>(ETrackPrimitiveData::WidthOffset), SizeOffset.Y);

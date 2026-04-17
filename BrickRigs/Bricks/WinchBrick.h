@@ -178,7 +178,6 @@ public:
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
-	virtual void PostConstructVehicle() override;
 	virtual void UpdateCustomDepth(bool bEnable, uint8 Stencil) override;
 
 	virtual bool ShouldReplicate() const override

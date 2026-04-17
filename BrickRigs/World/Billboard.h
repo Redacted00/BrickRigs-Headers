@@ -4,7 +4,6 @@
 
 #include "Misc/BrickAssetManager.h"
 #include "CoreMinimal.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "World/StaticMeshProp.h"
 #include "Billboard.generated.h"
 
@@ -22,6 +21,7 @@ public:
 	UPROPERTY(EditAnywhere, Meta = (ClampMin = 0))
 	float Probability = 1.f;
 };
+
 
 /**
  * 
@@ -43,5 +43,5 @@ private:
 	UPROPERTY()
 	uint8 BillboardRandSeed;
 	// Used for async loading of the texture
-	FFluAsyncAssetLoader AssetLoader_BillboardTexture;
+	FSmartStreamableHandle StreamableHandle_BillboardTexture;
 };

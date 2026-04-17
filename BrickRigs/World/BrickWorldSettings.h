@@ -57,6 +57,10 @@ class BRICKRIGS_API ABrickWorldSettings : public AWorldSettings
 	DECLARE_MULTICAST_DELEGATE_OneParam(FHUDIconAdded, UHUDIconComponent*);
 	DECLARE_MULTICAST_DELEGATE(FOnSlomoChanged);
 
+	// Entries in order: Brick material used, base material of the brick, pattern class
+	using FVehicleMIDKey = TTuple<TSoftObjectPtr<UBrickMaterial>, TSoftObjectPtr<UMaterialInterface>, TSoftClassPtr<>>;
+	using FBrickDecalMIDKey = TTuple<TSoftObjectPtr<UBrickDecal>, TSoftObjectPtr<UMaterialInterface>>;
+
 	// ~Variables
 	// The world setup actor that has been created for this level
 	UPROPERTY(Transient, VisibleAnywhere, Category = World)
@@ -90,6 +94,17 @@ public:
 	// List of capture points in the level
 	UPROPERTY(Transient)
 	TArray<ACapturePoint*> CapturePoints;
+
+private:
+	// A shared library of MIDs generated for each brick material and pattern used by all vehicles in the world
+	// This is using weak pointers so MIDs are garbage collected automatically once they aren't used anymore
+	TMap<FVehicleMIDKey, TWeakObjectPtr<UMaterialInstanceDynamic>> VehicleMIDs;
+	// Last frame vehicle MIDs have been cleaned up
+	uint64 LastVehicleMIDCleanFrame = 0;
+	// Shared library of MIDs created for brick decals
+	TMap<FBrickDecalMIDKey, TWeakObjectPtr<UMaterialInstanceDynamic>> BrickDecalMIDs;
+	// Last frame decal MIDs have been cleaned up
+	uint64 LastDecalMIDCleanFrame = 0;
 	// ~Variables
 
 protected:
@@ -265,4 +280,10 @@ private:
 	void OnSlomoParamsChanged();
 	// Callback for the game state
 	void OnMatchSettingsChanged(const FMatchSettings& MatchSettings);
+
+public:
+	// Returns an existing vehicle MID or creates a new one if needed
+	UMaterialInstanceDynamic* FindOrCreateVehicleMID(UBrickMaterial* BrickMaterial, UMaterialInterface* BaseMaterial, UClass* PatternClass);
+	// Returns an existing decal MID or creates a new one if needed
+	UMaterialInstanceDynamic* FindOrCreateBrickDecalMID(UBrickDecal* Decal, UMaterialInterface* BaseMaterial);
 };

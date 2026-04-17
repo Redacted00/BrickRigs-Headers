@@ -25,7 +25,7 @@ protected:
 public:
 	// ~Super Interface
 	virtual bool Initialize() override;
-	virtual void UpdateValue(const FBrickPropertyChangedEvent* ChangedEvent) override;
+	virtual void UpdateValue() override;
 	virtual void UpdateIsReadOnly_Implementation(bool bNewReadOnly) override;
 	// ~Super Interface
 

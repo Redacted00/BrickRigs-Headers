@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "GenericTeamAgentInterface.h"
 #include "GameFramework/PlayerState.h"
 #include "BrickPlayerState.generated.h"
@@ -101,6 +102,9 @@ public:
 	virtual void PreNetReceive() override;
 	virtual void PostNetReceive() override;
 	virtual void OnRep_PlayerName() override;
+#if !BR_BUILD_VANILLA
+	virtual void OnRep_Score(float OldScore) override;
+#endif
 	// ~Super Interface
 
 	// Converts a player name string to an FText

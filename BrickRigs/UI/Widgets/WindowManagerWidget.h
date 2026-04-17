@@ -6,6 +6,7 @@
 #include "UI/Menu/Popups/PopupContainerWidget.h"
 #include "CoreMinimal.h"
 #include "BrickUserWidget.h"
+#include "Misc/BrickAssetManager.h"
 #include "WindowManagerWidget.generated.h"
 
 class UGameOverlayWidget;
@@ -40,7 +41,7 @@ class BRICKRIGS_API UWindowManagerWidget : public UBrickUserWidget
 
 	// ~Variables
 	// Handle used to load the active widget class
-	FFluAsyncAssetLoader AssetLoader_ActiveWidgetClass;
+	FSmartStreamableHandle StreamableHandle_ActiveWidgetClass;
 	// Currently active widget
 	UPROPERTY(Transient)
 	UMainWidgetBase* ActiveWidget;

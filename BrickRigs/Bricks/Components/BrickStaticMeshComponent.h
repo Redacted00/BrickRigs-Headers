@@ -28,7 +28,6 @@ public:
 	virtual FMatrix GetRenderMatrix() const override;
 	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 	virtual bool UpdateOverlapsImpl(const TOverlapArrayView* NewPendingOverlaps = nullptr, bool bDoNotifies = true, const TOverlapArrayView* OverlapsAtEndLocation = nullptr) override;
-	virtual UBodySetup* GetBodySetup() override;
 	// ~Super Interface
 
 	// Changes the custom scaling

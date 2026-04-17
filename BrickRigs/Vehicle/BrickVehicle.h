@@ -9,13 +9,15 @@
 #include "Components/BrickVehicleComponent.h"
 #include "VehicleDamage.h"
 #include "UGC/UGCTypes.h"
+#include "FuelLevel.h"
 #include "VehicleInputChannel.h"
 #include "Stats/Stats.h"
+#include "Bricks/TankBrick.h"
 #include "Bricks/MotorBrick.h"
 #include "BrickConnection.h"
 #include "RepVehicleMovement.h"
 #include "World/FireInterface.h"
-#include "Misc/FluTeamIdStatics.h"
+#include "Misc/BrickTeamId.h"
 #include "Player/ViewTargetInterface.h"
 #include "Player/BrickPawnInterface.h"
 #include "Character/BrickCharacter.h"
@@ -47,6 +49,24 @@ DECLARE_CYCLE_STAT(TEXT("InitElements"), STAT_InitFluidDynamicElements, STATGROU
 DECLARE_CYCLE_STAT(TEXT("IterateElements"), STAT_IterateFluidDynamicElements, STATGROUP_FluidDynamics);
 DECLARE_CYCLE_STAT(TEXT("AddForce"), STAT_AddFluidDynamicForce, STATGROUP_FluidDynamics);
 
+DECLARE_CYCLE_STAT(TEXT("Construct Vehicle"), STAT_Vehicle_Construct, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Construct Vehicle - CalcConnections"), STAT_Vehicle_Construct_CalcConnections, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Construct Vehicle - InitConnections"), STAT_Vehicle_Construct_InitConnections, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Construct Vehicle - PostInitConnections"), STAT_Vehicle_Construct_PostInitConnections, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Construct Vehicle - PostConstruct"), STAT_Vehicle_Construct_PostConstruct, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Repair Vehicle"), STAT_Vehicle_Repair, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Handle Vehicle Collisions"), STAT_Vehicle_HandleCollisions, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections"), STAT_Vehicle_UpdateBrickConnections, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - Connections"), STAT_Vehicle_UpdateBrickConnections_Connections, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - PreGatherConnectedBricks"), STAT_Vehicle_UpdateBrickConnections_PreGatherConnectedBricks, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - BricksToUpdate"), STAT_Vehicle_UpdateBrickConnections_BricksToUpdate, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - Bricks"), STAT_Vehicle_UpdateBrickConnections_Bricks, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - Clusters"), STAT_Vehicle_UpdateBrickConnections_Clusters, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - UpdateClusterRoot"), STAT_Vehicle_UpdateBrickConnections_UpdateClusterRoot, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - Parts"), STAT_Vehicle_UpdateBrickConnections_ActivateConnections, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - ReplicateDamage"), STAT_Vehicle_UpdateBrickConnections_ReplicateDamage, STATGROUP_Game);
+DECLARE_CYCLE_STAT(TEXT("Update Brick Connections - PostUpdateConnections"), STAT_Vehicle_UpdateBrickConnections_PostUpdateConnections, STATGROUP_Game);
+
 UENUM()
 enum class EVehiclePinMode : uint8
 {
@@ -64,9 +84,6 @@ class BRICKRIGS_API ABrickVehicle : public APawn, public IBrickPawnInterface, pu
 public:
 	// ~Statics
 	static constexpr auto MaxNumReplicatedParts = 10;
-	static constexpr auto InvalidConstructionState = MAX_uint8;
-	static constexpr auto LoadConstructionState = 0;
-	static constexpr auto FinishedConstructionState = 12;
 	// ~Statics
 
 	// ~Types
@@ -104,14 +121,14 @@ private:
 	// Replicated brick movement states
 	UPROPERTY(Transient, Replicated)
 	FRepVehicleMovement RepVehicleMovement;
-	// Current construction state
-	uint8 VehicleConstructionState = InvalidConstructionState;
-	// Counter used to distribute work across multiple frames
-	int32 ConstructionBrickCounter = 0;
-	// Real time when construction was started
-	float ConstructionStartTime = 0.f;
+	// Whether vehicle construction has been started yet
+	uint32 bStartedConstructVehicle : 1;
 	// Whether initial collision should be avoided after constructing the vehicle
 	uint32 bAvoidCollisionOnConstruct : 1;
+	// Whether the vehicle has been constructed
+	uint32 bIsVehicleConstructed : 1;
+	// Set to true while connections are being initialized
+	uint32 bIsInitializingBrickConnections : 1;
 	// Whether the physics are locally authoritative
 	uint32 bHasPhysicsAuthority : 1;
 	// Flags set to true if a value has been replicated
@@ -163,27 +180,20 @@ private:
 	// Used to replicate per brick damage info
 	UPROPERTY(Transient, Replicated)
 	FRepBrickDamage RepBrickDamage;
-	// Stores and replicates the current fuel level ratio
-	float FuelLevelRatio;
-	/**
-	 * Compressed replicated version of the fuel level
-	 * NOTE: Default to the maximum value, so it doesn't have to be replicated initially most of the time
-	 */
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_RepFuelLevelRatio)
-	uint16 RepFuelLevelRatio = MAX_uint16;
+	// Stores and replicates the current fuel level
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_FuelLevel)
+	FFuelLevel FuelLevel;
 	UFUNCTION()
-	void OnRep_RepFuelLevelRatio();
-	// Total fuel capacity
-	float FuelCapacity = 0.f;
+	void OnRep_FuelLevel(const FFuelLevel& PrevFuelLevel);
 	// Whether the vehicle is currently pinned in place
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_PinMode)
 	EVehiclePinMode PinMode;
 	UFUNCTION()
 	void OnRep_PinMode();
 	// The unique teams of all passengers
-	// NOTE: This has to be replicated since characters can be culled when far away, which means the client would not know about their team affiliation
+	// NOTE: This has to be replicated since characters can be culled when far away, which means the client would not know about the team affiliation
 	UPROPERTY(ReplicatedUsing = OnRep_PassengerTeamIds)
-	TArray<FGenericTeamId> PassengerTeamIds;
+	FGenericTeamIdSet PassengerTeamIds;
 	UFUNCTION()
 	void OnRep_PassengerTeamIds();
 	// List populated on clients
@@ -192,9 +202,6 @@ private:
 	// Root brick of the vehicle, usually the driver seat
 	UPROPERTY(Transient)
 	UBrick* RootBrick;
-	// Driver seat of the vehicle
-	UPROPERTY(Transient)
-	USeatBrick* DriverSeat;
 	// List of all cluster root bricks
 	TArray<FBrickEditorObjectID> ClusterRootBricks;
 	// List of all cluster roots that have fluid dynamic elements
@@ -237,9 +244,6 @@ private:
 
 	// The cached loadout used to restore slots upon repairing
 	FInventoryLoadout InventoryLoadout;
-
-	// Client PC's who have acknowledged construction
-	TArray<TWeakObjectPtr<ABrickPlayerController>> ClientsFinishedConstruction;
 	// ~Variables
 
 	// ~Components
@@ -282,6 +286,9 @@ public:
 
 	// ~Super Interface
 	virtual void Reset() override;
+#if !BR_BUILD_VANILLA
+	virtual void PreNetReceiveSubobjects(const FReplicationFlags& RepFlags) override;
+#endif
 	virtual void PreNetReceive() override;
 	virtual void PostNetReceive() override;
 	virtual void PostRepNotifies() override;
@@ -315,6 +322,13 @@ public:
 	virtual FVector GetTargetLocation(AActor* RequestedBy) const override;
 	virtual FVector GetVelocity() const override;
 
+#if !BR_BUILD_VANILLA
+	virtual bool CanBeDamaged() const override
+	{
+		// Don't allow damage while the vehicle is fully pinned
+		return Super::CanBeDamaged() && PinMode != EVehiclePinMode::AllBricks;
+	}
+#endif
 
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual float InternalTakeRadialDamage(float Damage, const FRadialDamageEvent& RadialDamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -349,7 +363,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsVehicleConstructed() const
 	{
-		return VehicleConstructionState == FinishedConstructionState;
+		return bIsVehicleConstructed;
 	}
 
 	// Get the file the vehicle was constructed from
@@ -357,12 +371,6 @@ public:
 	const FUGCFileInfo& GetVehicleFileInfo() const
 	{
 		return VehicleFileInfo;
-	}
-
-	UFUNCTION(BlueprintPure)
-	FText GetVehicleDisplayName() const
-	{
-		return FText::AsCultureInvariant(VehicleFileInfo.Title);
 	}
 
 	// Get the player state who spawned this vehicle
@@ -385,6 +393,14 @@ public:
 		return VehiclePrice;
 	}
 
+private:
+	// Constructs the vehicle from the file info
+	void ConstructVehicleInternal();
+
+	// Called when the vehicle has been constructed or deconstructed
+	void OnIsVehicleConstructedChanged();
+
+public:
 	// Respawns the vehicle at the given transform, server only
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void RepairVehicle(const FVector& InLocation, const FRotator& InRotation, AActor* InSpawnPoint, bool bAvoidCollision = true);
@@ -395,18 +411,6 @@ private:
 
 	// Called after the bricks have been loaded, initializes connections etc.
 	void OnUGCItemLoaded(const EBrickEditorLoadResult Result, TArray<uint8>* ItemData);
-
-	// Called from the tick function to progress through the construction stages
-	void ConstructVehicleLoop();
-
-	// Updates the construction state
-	void SetVehicleConstructionState(const uint8 NewState);
-
-	// Switches to the next construction state
-	void AdvanceVehicleConstructionState();
-
-	// Notifies the spawning player about the current construction progress
-	void UpdateConstructionProgress();
 
 	// Should be called after spawning or repairing, sets up the fuel etc.
 	void PostConstructOrRepair();
@@ -519,7 +523,7 @@ public:
 	USeatBrick* GetDriverSeat() const;
 
 	// Get the brick ID of the driver seat
-	FBrickEditorObjectID GetDriverSeatID() const;
+	const FBrickEditorObjectID& GetDriverSeatID() const;
 
 	// Whether the given seat ID exists on the vehicle
 	bool IsValidSeatID(const FBrickEditorObjectID& InSeatID) const;
@@ -571,9 +575,6 @@ public:
 
 	// Resets the input state
 	void ResetInput();
-
-	// Lets the vehicle know that a client has finished vehicle construction
-	void OnClientFinishedConstruction(ABrickPlayerController* PC);
 	// ~Vehicle
 
 	// ~Connections
@@ -631,9 +632,6 @@ private:
 	// This is the main function used to initialize, break or repair connections
 	void UpdateBrickConnections(const TArray<UBrickConnection*>& InConnections, EUpdateBrickConnectionsMode Mode, bool bCalledFromOtherVehicle = false);
 
-	// Activates all brick connections if needed
-	void ActivateBrickConnections(const TArray<UBrickConnection*>& InConnections);
-
 	// Used to determine if a part should simulate physics or not
 	template <typename T>
 	bool ShouldPartRootSimulatePhysics(T IsConnectedToRootBrick) const
@@ -679,20 +677,20 @@ public:
 	UFUNCTION(BlueprintPure)
 	float GetFuelCapacity() const
 	{
-		return FuelCapacity;
+		return FuelLevel.GetCapacity();
 	}
 
 	// Get the absolute fuel level in liters
 	UFUNCTION(BlueprintPure)
 	float GetFuelLevel() const
 	{
-		return FuelLevelRatio * FuelCapacity;
+		return FuelLevel.GetAbsolute();
 	}
 
 	// Get the normalized fuel level from 0-1
 	float GetRelativeFuelLevel() const
 	{
-		return FuelLevelRatio;
+		return FuelLevel.GetRelative();
 	}
 
 protected:
@@ -703,12 +701,8 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void SetFuelLevel(float NewLevel);
 
-	// Sets the current relative fuel level, server only
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void SetRelativeFuelLevel(const float NewLevel);
-
 	// Called whenever the fuel level has changed
-	void OnFuelLevelChanged();
+	void OnFuelLevelChanged(float OldLevel);
 
 	// Get the fuel level/capacity from the root cluster
 	float CalcFuelLevel() const;
@@ -766,7 +760,7 @@ public:
 	void GetSensorsTraceIgnoredActors(FCollisionQueryParams& OutParams) const;
 
 	// To be called when a client wants to blow up a tank from an explosion
-	void ExplodeTankBrickOnClient(UBrick* Tank);
+	void ExplodeTankBrickOnClient(UTankBrickBase* Tank);
 
 	// Sends fuel tanks to explode to the server if needed
 	void ServerExplodeTankBricks(bool bForceUpdate);
@@ -813,7 +807,7 @@ public:
 
 	// ~IBrickPawnInterface
 	virtual void OnOwningPlayerStateChanged(ABrickPlayerState* OldPlayerState) override;
-	virtual void GetTeamAffiliation(TArray<FGenericTeamId>& OutTeams) const override;
+	virtual void GetTeamAffiliation(TSet<FGenericTeamId>& OutTeams) const override;
 	virtual void GetPawnBounds(FVector& OutBoundsMin, FVector& OutBoundsMax) const override;
 	virtual FTransform GetPawnRestartTransform() const override;
 	virtual void OnCanBeDamagedChanged() override;
@@ -922,7 +916,7 @@ public:
 		VehicleComponent->ForEachBrickEditorObject<UBrick, UBrick>(Function);
 	}
 
-	// Execute a function on every part root
+	// Execute a function on every part root of a given type
 	void ForEachPartRoot(const TFunction<void(UBrick*)>& Function) const
 	{
 		for (const auto& ClusterRootID : ClusterRootBricks)

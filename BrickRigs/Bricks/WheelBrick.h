@@ -77,9 +77,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Wheel)
 	bool bInvertTankSteering;
 	UPROPERTY(EditDefaultsOnly, Category = Wheel)
-	float WheelDiameter;
+	FBrickUnits WheelDiameter;
 	UPROPERTY(EditDefaultsOnly, Category = Wheel)
-	float WheelWidth;
+	FBrickUnits WheelWidth;
 	// ~Brick Props
 
 public:
@@ -92,10 +92,9 @@ public:
 	virtual float GetMaxConnectorDist() const override;
 	virtual void OnBrickConnectionActivated(UBrickConnection* InConnection) override;
 	virtual void OnBrickConnectionBroke(UBrickConnection* InConnection) override;
-	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void PostModifyBrickProperty(const FBrickPropertyChangedEvent& Event) override;
-	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EAxis::Type MirrorAxis) const override;
+	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EBrickEditorMirrorMode MirrorMode) const override;
 	virtual void OnCalculateMassProperties(FBodyInstance* BodyInstance, PxMassProperties& OutMassProps, FTransform& OutMassTransform) override;
 	virtual void OnContactModify(const FContactModifyParams& Params, int32 ActorIdx, const UBrickVehicleStaticInfo* VehicleStaticInfo) const override;
 	virtual FVector GetRenderScale3D() const override;

@@ -57,7 +57,6 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewTargetChanged, UObject*);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnBrickEditorChanged, ABrickEditor*);
 	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnVehicleDownloadProgressChanged, ABrickVehicleDownloadReplicator*, const TOptional<float>&);
-	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnVehicleConstructionProgressChanged, ABrickVehicle*, const TOptional<float>&);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnProjectileCameraEnabledChanged, bool);
 	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnRestartFailed, EPlayerSpawnResult, const FVehicleSpawnProperties&);
 
@@ -149,13 +148,6 @@ private:
 	// Server time when the player has been frozen
 	UPROPERTY(Transient, Replicated)
 	float FreezeTime;
-
-#if WITH_EDITORONLY_DATA
-	UPROPERTY(Config)
-	EUGCType LastPIEEditorType;
-	UPROPERTY(Config)
-	FUGCFileInfo LastPIEUGCFile;
-#endif
 	// ~Variables
 
 	// ~Components
@@ -180,7 +172,6 @@ public:
 	FOnBrickEditorChanged OnBrickEditorChangedDelegate;
 	FOnViewTargetChanged OnViewTargetSubobjectChangedDelegate;
 	FOnVehicleDownloadProgressChanged OnVehicleDownloadProgressChangedDelegate;
-	FOnVehicleConstructionProgressChanged OnVehicleConstructionProgressChangedDelegate;
 	FOnProjectileCameraEnabledChanged OnProjectileCameraEnabledChangedDelegate;
 	FOnRestartFailed OnRestartFailedDelegate;
 	// ~Delegates
@@ -718,7 +709,7 @@ public:
 private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerSpawnDummy(const FVector& Location, uint16 CompressedYaw);
-x
+
 public:
 	// Whether the player is allowed to cycle between characters
 	bool CanCycleCharacters() const;
@@ -799,14 +790,10 @@ private:
 	void ServerScrapAllVehicles(bool bIncludeUsed);
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerExplodeVehicle();
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerOnAnyVehicleConstructed(ABrickVehicle* InVehicle);
 
 public:
 	// Called from vehicle download replicators when their download progress has changed
 	void OnVehicleDownloadProgressChanged(ABrickVehicleDownloadReplicator* InDownloadReplicator, const TOptional<float>& Progress);
-	// Called from the vehicle when construction progress has changed
-	void OnVehicleConstructionProgressChanged(ABrickVehicle* InVehicle, const TOptional<float>& Progress);
 	// Called when any vehicle in the level has been constructed or deconstructed
 	void OnAnyVehicleConstructedOrDeconstructed(ABrickVehicle* InVehicle, bool bNewConstructed);
 	// Get the number of vehicles spawned by the player

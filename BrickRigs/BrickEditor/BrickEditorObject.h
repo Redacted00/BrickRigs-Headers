@@ -7,6 +7,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/BrickEditorComponentInterface.h"
 #include "BrickEditorObjectPool.h"
+#include "Bricks/Misc/BrickUnits.h"
 #include "BrickEditorSaveVersion.h"
 #include "BrickEditorObjectID.h"
 #include "GameplayTags.h"
@@ -61,16 +62,18 @@ struct FResolveBrickPropertyParams
 	const FBrickEditorReferenceResolver& ReferenceResolver;
 
 private:
-	// Version currently being loaded
+	// The version currently being loaded
 	const FBrickRigsSaveVersion Version;
-	// Name of the property that failed to be loaded
+	// The name of the property that failed to be loaded
 	const FString PropertyName;
+	// Whether the property has been removed entirely, otherwise just the value wasn't accepted
+	const bool bPropertyRemoved;
 	// ~Variables
 
 public:
 	// ~Constructor
-	FResolveBrickPropertyParams(FArchive& Ar, const FBrickEditorReferenceResolver& ReferenceResolver, const FBrickRigsSaveVersion& Version, const FString& PropertyName)
-		: Ar(Ar), ReferenceResolver(ReferenceResolver), Version(Version), PropertyName(PropertyName)
+	FResolveBrickPropertyParams(FArchive& InAr, const FBrickEditorReferenceResolver& InReferenceResolver, const FBrickRigsSaveVersion& InVersion, const FString& InPropertyName, bool bInPropertyRemoved)
+		: Ar(InAr), ReferenceResolver(InReferenceResolver), Version(InVersion), PropertyName(InPropertyName), bPropertyRemoved(bInPropertyRemoved)
 	{
 	}
 
@@ -92,9 +95,20 @@ public:
 		return PropertyName.Left(DotIndex);
 	}
 
-	bool ResolveBrickProperty(const FString& InPropertyName, const bool bSearchSuffix = false) const
+	// Convenience macro useful for being able to enter the properties directly
+#define ResolveInvalidBrickPropertyValue(Property) ResolveInvalidBrickPropertyValueInternal(Property, #Property)
+
+	// NOTE: The property itself is passed as a parameter to provoke a compile error in case it doesn't exist
+	template <typename PropertyType>
+	bool ResolveInvalidBrickPropertyValueInternal(const PropertyType& Property, const FString& InPropertyName) const
 	{
-		return bSearchSuffix ? PropertyName.EndsWith(InPropertyName, ESearchCase::IgnoreCase) : InPropertyName == PropertyName;
+		return !bPropertyRemoved && InPropertyName == PropertyName;
+	}
+
+	// Start resolving a property that has been removed entirely
+	bool ResolveRemovedBrickProperty(const FString& InPropertyName, bool bSearchSuffix = false) const
+	{
+		return bPropertyRemoved && (bSearchSuffix ? PropertyName.EndsWith(InPropertyName, ESearchCase::IgnoreCase) : InPropertyName == PropertyName);
 	}
 };
 
@@ -106,17 +120,9 @@ enum class EBrickEditorObjectContext : uint8
 	ThumbnailRender
 };
 
-// Editor only params instantiated on every object
-USTRUCT()
+// List of editor only params instantiated on every object
 struct FBrickEditorObjectEditorParams
 {
-	GENERATED_BODY()
-
-#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-	// Saved struct type to enable runtime type checks
-	TWeakObjectPtr<UStruct> Struct;
-#endif
-
 	// The current selection state
 	EBrickSelectionState SelectionState = EBrickSelectionState::Unselected;
 	// Optional validity state, used for the move mode for example
@@ -204,7 +210,7 @@ public:
 	}
 
 	// Can be implemented for bricks
-	virtual FVector GetBrickEditorObjectSize() const { return FVector::ZeroVector; }
+	virtual FBrickSize GetBrickEditorObjectSize() const { return FBrickSize(); }
 	// Returns the default price of the object
 	virtual float GetBrickEditorObjectPrice() const { return Price; }
 	// Used to sort the brick editor classes list
@@ -272,7 +278,7 @@ public:
 		const FName& InObjectName,
 		const FBrickEditorObjectID& InObjectID,
 		EBrickEditorObjectContext InEditorContext,
-		FBrickEditorObjectPool& InObjectPool,
+		const TSharedRef<FBrickEditorObjectPool>& InObjectPool,
 		const FBrickRigsSaveVersion& Version,
 		const FLegacyBrickEditorObjectClassID& LegacyClassId,
 		bool bInCreatedAsMirrored,
@@ -436,7 +442,7 @@ public:
 	const UBrickEditorStaticInfo* GetBrickEditorStaticInfo() const;
 
 	// Returns the object pool from the outer interface
-	FBrickEditorObjectPool* GetObjectPool() const;
+	const TSharedRef<FBrickEditorObjectPool>& GetObjectPool() const;
 
 	// Returns the current editor mode
 	UBrickEditorMode* GetBrickEditorMode() const;
@@ -464,35 +470,14 @@ protected:
 	template <typename T = FBrickEditorObjectEditorParams>
 	T* GetEditorParams() const
 	{
-		if (EditorParams.IsValid())
-		{
-#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-			checkf(EditorParams->Struct.IsValid(), TEXT("Editor params weren't constructed correctly for class %s, did you use MakeEditorParams?"), *GetNameSafe(GetClass()));
-			checkf(EditorParams->Struct->IsChildOf(T::StaticStruct()), TEXT("Expected editor params for class %s to be of type %s, but they aren't. Did you set the parent struct correctly?"), *GetNameSafe(GetClass()), *GetNameSafe(T::StaticStruct()));
-#endif
-
-			return static_cast<T*>(&*EditorParams);
-		}
-
-		return nullptr;
-	}
-
-	// Helper for constructing new editor parameters
-	template <typename T>
-	static TUniquePtr<T> MakeEditorParams()
-	{
-		auto Result = MakeUnique<T>();
-#if !UE_BUILD_SHIPPING && !UE_BUILD_TEST
-		Result->Struct = T::StaticStruct();
-#endif
-		return MoveTemp(Result);
+		return EditorParams.IsValid() ? static_cast<T*>(&*EditorParams) : nullptr;
 	}
 
 private:
 	// Can be overridden for custom editor params classes
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const
 	{
-		return MakeEditorParams<FBrickEditorObjectEditorParams>();
+		return MakeUnique<FBrickEditorObjectEditorParams>();
 	}
 
 	// ~Editor
@@ -566,12 +551,6 @@ public:
 		return RootComponent.Get();
 	}
 
-	// Returns the components array
-	const auto& GetComponents() const
-	{
-		return Components;
-	}
-
 	// Get all sub components of the given type
 	template <class T>
 	void GetComponents(TArray<T*>& OutComponents) const
@@ -623,21 +602,15 @@ protected:
 
 	// Adds a new component to this object
 	template <class ComponentType, typename ParamType>
-	TBrickEditorComponentPtr<ComponentType> CreateBrickEditorComponent(ParamType& Params)
+	TBrickEditorComponentPtr<ComponentType> CreateBrickEditorComponent(ParamType& Params, const FName& Name = NAME_None)
 	{
 		check(bIsInitialized);
-
-		if (!GetObjectPool())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Attempted to create a component of class %s on %s, but the object pool is not valid!"), *GetNameSafe(Params.GetComponentClass()), *GetName());
-			return TBrickEditorComponentPtr<ComponentType>();
-		}
-		
 		// Let the pool create a new component
 		bool bHasBeenRecycled;
-		auto* NewComponent = GetObjectPool()->FindOrCreateObject<ComponentType>(Params.GetComponentClass(), Params.Name, bHasBeenRecycled);
+		ComponentType* NewComponent = GetObjectPool()->FindOrCreateObject<ComponentType>(Params.GetComponentClass(), Name, bHasBeenRecycled);
 		// Initialize the component interface
-		if (auto* ComponentInterface = Cast<IBrickEditorComponentInterface>(NewComponent))
+		IBrickEditorComponentInterface* ComponentInterface = Cast<IBrickEditorComponentInterface>(NewComponent);
+		if (ComponentInterface)
 		{
 			ensure(ComponentInterface->GetBrickEditorObject() == nullptr);
 			ComponentInterface->SetBrickEditorObject(this);
@@ -653,7 +626,7 @@ protected:
 		}
 
 		// Add a pointer to the components array
-		const auto NewCompPtr = MakeShared<FBrickEditorComponentPtr>(NewComponent);
+		const TSharedRef<FBrickEditorComponentPtr> NewCompPtr = MakeShared<FBrickEditorComponentPtr>(NewComponent);
 		Components.Add(NewCompPtr);
 		return TBrickEditorComponentPtr<ComponentType>(NewCompPtr);
 	}
@@ -669,14 +642,35 @@ protected:
 	}
 
 	// Removes a component at a specific index in the components array
-	void RemoveBrickEditorComponentAtIndex(const int32 Index, const bool bAllowShrinking = true);
+	void RemoveBrickEditorComponentAtIndex(int32 Index, bool bAllowShrinking = true)
+	{
+		check(Components.IsValidIndex(Index));
 
-	// Removes all components
-	void RemoveAllBrickEditorComponents();
+		// NOTE: Get a copy, since we remove the entry from the list right aray
+		const auto CompPtr = Components[Index];
+		// Remove the reference from the list of components
+		Components.RemoveAt(Index, 1, bAllowShrinking);
 
-private:
-	// Shared function for removing a component
-	void RemoveBrickEditorComponentInternal(const TSharedRef<FBrickEditorComponentPtr>& CompPtr);
+		if (CompPtr->IsValid())
+		{
+			// NOTE: We have to detach the component manually, so subsequent calls of SetupAttachment can be done
+			if (auto* SceneComponent = Cast<USceneComponent>(CompPtr->Get()))
+			{
+				SceneComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+			}
+			// Unregister the component
+			CompPtr->Get()->UnregisterComponent();
+			// Clear the object association
+			if (auto* ComponentInterface = Cast<IBrickEditorComponentInterface>(CompPtr->Get()))
+			{
+				ComponentInterface->SetBrickEditorObject(nullptr);
+			}
+			// Add the component back to the pool
+			GetObjectPool()->RemoveObject(CompPtr->Get());
+			// Reset the shared weak pointer, so if the object is holding a reference to it it will be reset as well
+			CompPtr->Reset();
+		}
+	}
 
 public:
 	// Called from components when they are finished and want to be removed automatically
@@ -720,11 +714,11 @@ public:
 		FVector BoundsMax;
 		if (GetBrickEditorObjectLocalBounds(BoundsMin, BoundsMax))
 		{
-			for (const auto X : { BoundsMin.X, BoundsMax.X })
+			for (const auto X : {BoundsMin.X, BoundsMax.X})
 			{
-				for (const auto Y : { BoundsMin.Y, BoundsMax.Y })
+				for (const auto Y : {BoundsMin.Y, BoundsMax.Y})
 				{
-					for (const auto Z : { BoundsMin.Z, BoundsMax.Z })
+					for (const auto Z : {BoundsMin.Z, BoundsMax.Z})
 					{
 						const auto Point = RefTransform.TransformPositionNoScale(FVector(X, Y, Z));
 						OutBoundsMin.X = FMath::Min(OutBoundsMin.X, Point.X);
@@ -739,7 +733,7 @@ public:
 		}
 	}
 
-	// Get the bounding extremes in spawn relative transform
+	// Get the bounding extremas in spawn relative transform
 	void GetBrickEditorObjectSpawnRelativeBounds(FVector& OutBoundsMin, FVector& OutBoundsMax) const;
 
 	// Returns the world origin of the bounds
@@ -837,11 +831,11 @@ public:
 
 	// Mirrors the object transform and properties
 	// NOTE: This has to be called BEFORE the object is initialized
-	void MirrorBrickEditorObject(EAxis::Type MirrorAxis);
+	void MirrorBrickEditorObject(EBrickEditorMirrorMode MirrorMode);
 
 private:
 	// Allows sub classes to mirror additonal data manually
-	virtual void OnMirrorBrickEditorObject(EAxis::Type MirrorAxis)
+	virtual void OnMirrorBrickEditorObject(EBrickEditorMirrorMode MirrorMode)
 	{
 	}
 
@@ -855,7 +849,7 @@ public:
 	}
 
 	// Returns the size of the object in brick units
-	virtual FVector GetBrickEditorObjectSize() const
+	virtual FBrickSize GetBrickEditorObjectSize() const
 	{
 		return GetStaticInfo()->GetBrickEditorObjectSize();
 	}
@@ -1221,16 +1215,16 @@ public:
 	void SetMoveTransform(const FTransform& NewTransform);
 
 	// Returns true if the property value is mirrored from the other object
-	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EAxis::Type MirrorAxis) const;
+	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EBrickEditorMirrorMode MirrorMode) const;
 
 	// Get the transform to apply when the brick is mirrored
-	void GetMirroredSpawnTransform(FVector& OutLocation, FQuat& OutRotation, const EAxis::Type MirrorAxis) const
+	void GetMirroredSpawnTransform(FVector& OutLocation, FQuat& OutRotation, EBrickEditorMirrorMode MirrorMode) const
 	{
-		MirrorTransform(SpawnLocation, SpawnRotation.Quaternion(), OutLocation, OutRotation, MirrorAxis);
+		MirrorTransform(SpawnLocation, SpawnRotation.Quaternion(), OutLocation, OutRotation, MirrorMode);
 	}
 
 	// Mirror an arbitrary transform
-	void MirrorTransform(const FVector& Location, const FQuat& Rotation, FVector& OutLocation, FQuat& OutRotation, const EAxis::Type MirrorAxis) const;
+	void MirrorTransform(const FVector& Location, const FQuat& Rotation, FVector& OutLocation, FQuat& OutRotation, const EBrickEditorMirrorMode MirrorMode) const;
 
 protected:
 	// Get the axes that need to be flipped or exchanged to mirror the object
@@ -1263,14 +1257,8 @@ public:
 	// Load custom data  from an archive
 	void LoadBrickEditorObject(FArchive& Ar, FBrickRigsSaveVersion Version);
 
-	// Gives the object a chance to load values from deprecated properties
+	// Gives the object a chance to recycle data from a removed property or removed property value
 	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params)
-	{
-		return false;
-	}
-
-	// Gives the object a chance to load a property that has been removed
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params)
 	{
 		return false;
 	}

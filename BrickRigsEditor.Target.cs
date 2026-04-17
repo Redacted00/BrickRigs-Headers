@@ -11,6 +11,5 @@ public class BrickRigsEditorTarget : BrickRigsTarget
 
 		// These are not allowed to be set in editor targets, need to be cleared after the super constructor has set them
 		GlobalDefinitions.Clear();
-
 	}
 }

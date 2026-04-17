@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Serialization/FluSerializationStatics.h"
+#include "Serialization/SerializationHelper.h"
 #include "BrickProperty.h"
 
 class IObjectPropertyItemInterface;
@@ -53,7 +53,7 @@ public:
 
 	virtual bool ImportProperty(const FBrickPropertyContainer& Container, const TCHAR* Buffer) const override
 	{
-		return SetValue(Container, FFluSerializationStatics::LoadObjectFromName(Buffer, GetSupportedObjects(Container), true));
+		return SetValue(Container, FSerializationHelper::LoadObjectFromName(Buffer, GetSupportedObjects(Container), true));
 	}
 
 	virtual bool CanImportProperty(const FBrickPropertyContainer& Container, const TCHAR* Buffer) const override

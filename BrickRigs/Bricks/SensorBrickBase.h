@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "ScalableBrick.h"
+#include "Bricks/Brick.h"
 #include "SensorBrickBase.generated.h"
 
 UCLASS(Abstract)
-class BRICKRIGS_API USensorBrickBaseStaticInfo : public UScalableBrickStaticInfo
+class BRICKRIGS_API USensorBrickBaseStaticInfo : public UBrickStaticInfo
 {
 	GENERATED_BODY()
 
@@ -19,7 +19,7 @@ public:
  *
  */
 UCLASS(Abstract)
-class BRICKRIGS_API USensorBrickBase : public UScalableBrick
+class BRICKRIGS_API USensorBrickBase : public UBrick
 {
 	GENERATED_BODY()
 
@@ -30,7 +30,6 @@ public:
 	// ~Brick Properties
 
 	// ~Super Interface
-	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void PreRepairBrick(const FTransform& SpawnTransform) override;
 
 	virtual bool HasAnyOutputChannel() const override
@@ -44,6 +43,6 @@ public:
 	}
 
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
+	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	// ~Super Interface
 };

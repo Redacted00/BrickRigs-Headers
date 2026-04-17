@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Serialization/FluSerializationStatics.h"
+#include "Serialization/SerializationHelper.h"
 #include "CharacterDamageInfo.generated.h"
 
 // This struct is used to replicate damage events to clients
@@ -55,12 +55,12 @@ public:
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		FFluSerializationStatics::SerializeFloatCompressed<uint8>(Ar, Damage, 0.f, 1.f);
+		FSerializationHelper::SerializeFloatCompressed(Ar, Damage, 0.f, 1.f, 8);
 
 		Ar << bHitDirectionSet;
 		if (bHitDirectionSet)
 		{
-			FFluSerializationStatics::SerializeFloatCompressed<uint8>(Ar, HitDirection, 0.f, 360.f);
+			FSerializationHelper::SerializeFloatCompressed(Ar, HitDirection, 0.f, 360.f, 8);
 		}
 
 		return !Ar.IsError();

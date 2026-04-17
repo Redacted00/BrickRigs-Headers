@@ -16,11 +16,8 @@ class USoundBase;
 class USeatBrick;
 class UBrickConnection;
 
-USTRUCT()
-struct FActuatorBrickEditorParams : public FBrickEditorParams
+struct FActuatorBrickEditorParams : FBrickEditorParams
 {
-	GENERATED_BODY()
-
 	// Arrow components used to visualize the actuation limits in the editor
 	TArray<TBrickEditorComponentPtr<UBrickEditorArrowComponent>> ArrowComponents;
 };
@@ -121,8 +118,6 @@ class BRICKRIGS_API UActuatorBrick : public UBrick
 	float LastInteractionTime;
 	// Min and max actuation
 	mutable FFloatInterval ActuationRange;
-	// Cached flag indicating whether the actuator should be replicated
-	uint8 bReplicateActuator : 1;
 	// Whether the local player has authority over the actuator
 	uint8 bHasActuatorAuthority : 1;
 	// Whether the actuator state has been replicated before
@@ -150,7 +145,7 @@ public:
 
 	// ~Super Interface
 	virtual void PostLoadBrickEditorObject(FBrickRigsSaveVersion Version, const FLegacyBrickEditorObjectClassID& LegacyClassId, const FBrickEditorReferenceResolver* ReferenceResolver) override;
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void TickBrick(float DeltaTime) override;
 	virtual bool ShouldBrickTick() const override;
 	virtual bool ShouldReplicate() const override;
@@ -167,13 +162,13 @@ public:
 	virtual void OnBrickConnectionBroke(UBrickConnection* InConnection) override;
 	virtual void OnBricksAddedOrRemovedFromCluster() override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
-	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EAxis::Type MirrorAxis) const override;
+	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
+	virtual bool IsBrickPropertyMirroredFrom(const UBrickEditorObject* OtherObject, const FBrickPropertyInstance& Property, const EBrickEditorMirrorMode MirrorMode) const override;
 	virtual void UpdateEditorVisualization() override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FActuatorBrickEditorParams>();
+		return MakeUnique<FActuatorBrickEditorParams>();
 	}
 
 	// ~Super Interface
@@ -293,7 +288,7 @@ private:
 	// Returns the player controller and state with authority over the actuator
 	TTuple<AController*, ABrickPlayerState*> GetAuthoritativePlayer() const;
 	// Updates the actuator state, server and all clients
-	void SetActuatorState(const FActuatorState& NewState, const bool bReset = false);
+	void SetActuatorState(const FActuatorState& NewState);
 	// Updates the replicated actuator state
 	void SetRepActuatorState(const FActuatorState& NewState);
 	// Updates the current actuation
@@ -312,4 +307,7 @@ private:
 
 	// Property callbacks
 	static void GetActuatorModeItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
+	static FFloatInterval StaticGetSpeedFactorRange(const FBrickPropertyContainer& Container);
+	static FFloatInterval StaticGetMinLimitRange(const FBrickPropertyContainer& Container);
+	static FFloatInterval StaticGetMaxLimitRange(const FBrickPropertyContainer& Container);
 };

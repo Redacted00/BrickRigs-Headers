@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Bricks/Misc/BrickUnits.h"
 #include "GameplayTags.h"
 #include "UObject/Object.h"
 #include "BrickEditorObjectFilter.generated.h"
@@ -15,8 +16,9 @@ struct FBrickEditorObjectFilterParams
 	GENERATED_BODY()
 
 	// ~Variables
-	// List of classes included in this filter
-	TArray<FSoftClassPath> IncludedStaticInfoClasses;
+	// List of objects included in this filter
+	UPROPERTY(Transient)
+	TArray<UClass*> IncludedStaticInfoClasses;
 	// ~Variables
 
 	// ~Properties
@@ -31,13 +33,37 @@ struct FBrickEditorObjectFilterParams
 	FGameplayTagContainer FilterTags;
 	// Brick size to filters, used as OR
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Filter)
-	TArray<FVector> BrickSizes;
+	TArray<FBrickSize> BrickSizes;
 	// ~Properties
 
 	// Whether the given class is included in this filter, only to be called via the filter ref
 	bool IsStaticInfoClassIncludedInternal(UClass* InStaticInfoClass) const;
 	// Get the desired display name for the filter
-	FText GetDisplayName() const;
+	FText GetDisplayName() const
+	{
+		// Use the custom name if it is set
+		if (!DisplayName.IsEmpty())
+		{
+			return DisplayName;
+		}
+
+		// Get all size tags
+		FText OutDisplayName;
+		for (auto i = 0; i < BrickSizes.Num(); ++i)
+		{
+			const auto SizeText = BrickSizes[i].ToText(true);
+			if (i == 0)
+			{
+				OutDisplayName = SizeText;
+			}
+			else
+			{
+				OutDisplayName = FText::Format(FText::AsCultureInvariant("{0}, {1}"), OutDisplayName, SizeText);
+			}
+		}
+
+		return OutDisplayName;
+	}
 };
 
 // Used to uniquely identify a filter or sub filter
@@ -77,7 +103,7 @@ public:
 	}
 
 	// Get all classes included with this filter
-	const TArray<FSoftClassPath>& GetIncludedStaticInfoClasses() const;
+	const TArray<UClass*>& GetIncludedStaticInfoClasses() const;
 	// Returns whether the given class is included in this filter
 	bool IncludesStaticInfoClass(UClass* InClass) const
 	{

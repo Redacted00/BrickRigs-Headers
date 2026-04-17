@@ -3,8 +3,9 @@
 #pragma once
 
 #include "UI/Menu/Popups/PopupParams.h"
+#include "Engine/StreamableManager.h"
 #include "CoreMinimal.h"
-#include "Misc/FluAsyncAssetLoader.h"
+#include "Misc/BrickAssetManager.h"
 #include "UI/Widgets/MainWidgetBase.h"
 #include "MenuWidget.generated.h"
 
@@ -21,7 +22,7 @@ class BRICKRIGS_API UMenuWidget : public UMainWidgetBase
 
 	// ~Variables
 	// Used to load the requested menu page
-	FFluAsyncAssetLoader AssetLoader_MenuPage;
+	FSmartStreamableHandle StreamableHandle_MenuPage;
 	FPopupHandle PopupHandle_NetworkError;
 	// The menu context that is currently open
 	FName MenuContext;

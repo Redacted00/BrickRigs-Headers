@@ -2,14 +2,11 @@
 
 #pragma once
 
+#include <limits>
 #include "CoreMinimal.h"
-#include "BrickEditor/BrickEditorSaveVersion.h"
-#include "Bricks/Misc/ScalableBrickConnectorSpacing.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "Vehicle/BrickConnection.h"
 #include "BrickStatics.generated.h"
 
-enum class EFluAxisSigned : uint8;
 class UExplosiveMaterial;
 class AExplosion;
 
@@ -52,9 +49,92 @@ public:
 	// Returns the instance index corresponding to the given body index
 	static int32 GetInstanceIndexFromBodyIndex(const UInstancedStaticMeshComponent* Comp, const int32 Index);
 
+	// Conversion
+	static float RPMToAngularSpeed(float Val)
+	{
+		return Val * PI * 2.f / 60.f;
+	}
+
+	static float AngularSpeedToRPM(float Val)
+	{
+		return Val / (PI * 2.f) * 60.f;
+	}
+
+	// Calculates angular velocity required to rotate from start to end in the given time
+	static FVector CalcAngularVelocity(const FQuat& Start, const FQuat& End, float DeltaTime);
+
+	// Used to calculate the impulse required to accelerate an object to the given speed
+	static float CalcStoppingImpulse(float TargetSpeed, const FVector& Normal, const FQuat& Rotation, const FVector& VelocityAtPoint, float Mass, const FVector& MomentOfInertia, const FVector& COMOffset)
+	{
+		// p = (vp - v - r * w) / (1 / m + r * r / O)
+		const auto Speed = VelocityAtPoint | Normal;
+
+		// Make sure to ignore the center of mass offset along the normal
+		const auto RotationRadiusSquared = FVector::VectorPlaneProject(COMOffset, Normal).SizeSquared();
+
+		// The axis of rotation we care about
+		const auto RotationAxis = (Normal ^ COMOffset).GetSafeNormal();
+		float InertiaVar;
+		if (RotationAxis.IsZero())
+		{
+			InertiaVar = 0.f;
+		}
+		else
+		{
+			const auto InertiaTensor = Rotation.UnrotateVector(RotationAxis).GetAbs() | MomentOfInertia;
+			InertiaVar = RotationRadiusSquared / InertiaTensor;
+		}
+
+		return (TargetSpeed - Speed) / (InertiaVar + 1.f / Mass);
+	}
+
 	// ~Physics
 
+	// ~Math
+	// Converts an FQuat to an FRotator while trying to keep the result as simple as possible for display purposes
+	UFUNCTION(BlueprintPure)
+	static FRotator QuatToNiceRotator(const FQuat& Quat);
+
+	// Returns the angle of a 2D vector against the unit axis in degrees, input has to be normalized
+	UFUNCTION(BlueprintPure)
+	static float Vector2DAngle(const FVector2D& Vector);
+
+	// Returns the signed angle between two normalized vectors
+	UFUNCTION(BlueprintPure)
+	static float Vector2DAngle2(const FVector2D& A, const FVector2D& B);
+
+	// Creates an integer with N leading ones
+	template <typename T>
+	static constexpr T GenerateIntWithLeadingOnes(T N)
+	{
+		// Special case when int would overflow from shifting too far left
+		if (N >= std::numeric_limits<T>::digits)
+		{
+			return std::numeric_limits<T>::max();
+		}
+
+		return (static_cast<T>(1) << N) - static_cast<T>(1);
+	}
+
+	// ~Math
+
 	// ~Arrays
+	// Wraps an index to the given number of entries
+	UFUNCTION(BlueprintPure)
+	static int32 WrapIndex(int32 Value, int32 Num)
+	{
+		while (Value < 0)
+		{
+			Value += Num;
+		}
+		while (Value >= Num)
+		{
+			Value -= Num;
+		}
+
+		return Value;
+	}
+
 	// Clamps the array to the given maximum size, returns the number of elements removed
 	template <typename T>
 	static int32 ClampArraySize(TArray<T>& Array, int32 MaxSize, bool bAllowShrinking = true, bool bRemoveFromStart = false)
@@ -93,67 +173,4 @@ public:
 	UFUNCTION(BlueprintPure)
 	static bool IsModdedAsset(const UObject* Asset);
 	// ~Modding
-
-	// ~Color
-	UFUNCTION(BlueprintPure)
-	static FString ColorToHex(const FLinearColor& Color, const bool bIncludeAlpha = true)
-	{
-		auto Hex = Color.ToFColor(true).ToHex();
-		// Remove the alpha channel if needed
-		if (!bIncludeAlpha)
-		{
-			Hex = Hex.LeftChop(2);
-		}
-		return Hex;
-	}
-
-	UFUNCTION(BlueprintPure)
-	static FLinearColor HexToColor(const FString& Hex)
-	{
-		return FLinearColor(FColor::FromHex(Hex));
-	}
-
-	// ~Color
-
-	// ~Brick Units
-	static float BrickUnitsToUnrealUnits(const float Units)
-	{
-		return Units * 30.f;
-	}
-
-	static float UnrealUnitsToBrickUnits(const float Units)
-	{
-		return Units / 30.f;
-	}
-
-	static float SubUnitsToUnrealUnits(const float Units)
-	{
-		return Units * 10.f;
-	}
-
-	static float UnrealUnitsToSubUnits(const float Units)
-	{
-		return Units / 10.f;
-	}
-
-	// Reads units from the legacy 1s notation
-	static float BrickUnitsFromLegacyString(FString Str);
-
-	// Reads a brick size vector from the legacy 1x1x1s notation
-	static FVector BrickSizeFromLegacyString(const FString& Str);
-
-	// Loads the deprecated brick units type
-	static float LoadDeprecatedBrickUnits(const FBrickRigsSaveVersion& Version, FArchive& Ar);
-
-	// Loads the deprecated brick size type
-	static FVector LoadDeprecatedBrickSize(const FBrickRigsSaveVersion& Version, FArchive& Ar);
-	// ~Brick Units
-
-	// ~Connector Spacing
-	UFUNCTION(BlueprintPure)
-	static EConnectorSpacing GetScalableBrickConnectorSpacingAxis(const FScalableBrickConnectorSpacing& ConnectorSpacing, const EFluAxisSigned Axis);
-
-	UFUNCTION(BlueprintCallable)
-	static void SetScalableBrickConnectorSpacingAxis(UPARAM(Ref) FScalableBrickConnectorSpacing& ConnectorSpacing, const EFluAxisSigned Axis, const EConnectorSpacing NewSpacing);
-	// ~Connector Spacing
 };

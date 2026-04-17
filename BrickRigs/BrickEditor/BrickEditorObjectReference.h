@@ -12,8 +12,13 @@ class UBrickEditorObject;
 template <typename T>
 struct TBrickEditorObjectPtr
 {
+	TBrickEditorObjectPtr()
+		: Ptr(nullptr)
+	{
+	}
+
 	// Initialize the pointer from an object
-	explicit TBrickEditorObjectPtr(const T* InObject = nullptr)
+	TBrickEditorObjectPtr(const T* InObject)
 	{
 		*this = InObject;
 	}
@@ -27,13 +32,17 @@ struct TBrickEditorObjectPtr
 
 	bool operator==(const TBrickEditorObjectPtr& Other) const
 	{
-		// IMPORTANT: The ID cannot be compared while the vehicle is spawned, since the ID of an object might change after loading
 		return Ptr == Other.Ptr && ID == Other.ID;
 	}
 
-	bool operator!=(const TBrickEditorObjectPtr& Other) const
+	bool operator==(const T* InObject) const
 	{
-		return !(*this == Other);
+		return Ptr == InObject;
+	}
+
+	bool operator!=(const T* InObject) const
+	{
+		return Ptr != InObject;
 	}
 
 	T* operator->() const
@@ -113,7 +122,7 @@ struct FBrickEditorObjectPtr
 	GENERATED_BODY()
 
 	// ~Constructor
-	explicit FBrickEditorObjectPtr(const UBrickEditorObject* InObject = nullptr)
+	FBrickEditorObjectPtr(const UBrickEditorObject* InObject = nullptr)
 		: Ptr(InObject)
 	{
 	}
@@ -121,11 +130,6 @@ struct FBrickEditorObjectPtr
 	bool operator==(const FBrickEditorObjectPtr& Other) const
 	{
 		return Ptr == Other.Ptr;
-	}
-
-	bool operator!=(const FBrickEditorObjectPtr& Other) const
-	{
-		return !(*this == Other);
 	}
 
 	bool IsNull() const

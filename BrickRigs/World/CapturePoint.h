@@ -3,11 +3,10 @@
 #pragma once
 
 #include "Misc/BrickAssetManager.h"
-#include "Serialization/FluSerializationStatics.h"
+#include "Misc/AlphabeticId.h"
+#include "Serialization/SerializationHelper.h"
 #include "CoreMinimal.h"
 #include "SpawnArea.h"
-#include "Misc/FluAsyncAssetLoader.h"
-#include "Misc/FluTeamIdStatics.h"
 #include "CapturePoint.generated.h"
 
 class ABaseCharacter;
@@ -24,6 +23,50 @@ enum class ECapturePointShape : uint8
 	Capsule
 };
 
+USTRUCT()
+struct FCapturePointState
+{
+	GENERATED_BODY()
+
+	// Current capture percentage
+	float CaptureRatio;
+	// Whether the flag has been captured by CapturedBy
+	bool bHasBeenCaptured;
+	// The team that is currently raising or lowering the flag
+	FGenericTeamId CapturingTeam;
+	// The team this flag is captured by, or the team that started capturing
+	FGenericTeamId CapturedBy;
+
+	bool operator==(const FCapturePointState& Other) const
+	{
+		return CaptureRatio == Other.CaptureRatio && bHasBeenCaptured == Other.bHasBeenCaptured && CapturingTeam == Other.CapturingTeam && CapturedBy == Other.CapturedBy;
+	}
+
+	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
+	{
+		// Compress the capture ratio to a byte
+		// IMPORTANT: Round down so the value is really only 1 when the point is fully captured
+		FSerializationHelper::SerializeFloatCompressed(Ar, CaptureRatio, 0.f, 1.f, 8, false);
+		// Serialize the remaining variables
+		Ar << bHasBeenCaptured;
+		FSerializationHelper::SerializeTeamId(Ar, CapturedBy);
+		FSerializationHelper::SerializeTeamId(Ar, CapturingTeam);
+
+		return !Ar.IsError();
+	}
+};
+
+template <>
+struct TStructOpsTypeTraits<FCapturePointState> : TStructOpsTypeTraitsBase2<FCapturePointState>
+{
+	enum
+	{
+		WithNetSerializer = true,
+		WithNetSharedSerialization = true,
+		WithIdenticalViaEquality = true
+	};
+};
+
 /**
  * A capture point is used in game modes like conquest and rush as an objective
  */
@@ -38,27 +81,13 @@ class BRICKRIGS_API ACapturePoint : public ASpawnArea
 	DECLARE_MULTICAST_DELEGATE(FOnCharacterEnteredOrLeft);
 
 	// ~Variables
-	FFluAsyncAssetLoader AssetLoader_BadgeTexture;
+	FSmartStreamableHandle StreamableHandle_BadgeTexture;
 
-	// Current capture percentage
-	float CaptureRatio;
-	// Compressed capture ratio for replication
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_CaptureRatio)
-	uint8 RepCaptureRatio;
+	// The replicated capture point state information
+	UPROPERTY(ReplicatedUsing = OnRep_CapturePointState)
+	FCapturePointState CapturePointState;
 	UFUNCTION()
-	void OnRep_CaptureRatio();
-
-	// Whether the flag has been captured by CapturedBy
-	UPROPERTY(Transient, ReplicatedUsing = OnCapturedByChanged)
-	bool bHasBeenCaptured;
-
-	// The team that is currently raising or lowering the flag
-	UPROPERTY(Transient, ReplicatedUsing = OnCapturingTeamChanged)
-	FGenericTeamId CapturingTeam;
-
-	// The team this flag is captured by, or the team that started capturing
-	UPROPERTY(Transient, ReplicatedUsing = OnCapturedByChanged)
-	FGenericTeamId CapturedBy;
+	void OnRep_CapturePointState(const FCapturePointState& OldState);
 
 	// Cached list of characters in the capturing zone
 	UPROPERTY(Transient)
@@ -99,7 +128,7 @@ protected:
 	float TimeToCapture;
 
 	UPROPERTY(EditAnywhere, Category = CapturePoint)
-	uint8 CapturePointId;
+	EAlphabeticId CapturePointId;
 	UPROPERTY(EditAnywhere, Category = CapturePoint)
 	ECapturePointShape CapturePointShape;
 	UPROPERTY(EditAnywhere, Category = CapturePoint)
@@ -136,7 +165,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	FText GetCapturePointShortDisplayName() const
 	{
-		return FText::AsCultureInvariant(FString::Printf(TEXT("%c"), 'A' + CapturePointId));
+		return FAlphabeticId::ToText(CapturePointId);
 	}
 
 	// Returns whether the given character is on this capture point
@@ -154,7 +183,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	float GetCaptureRatio() const
 	{
-		return CaptureRatio;
+		return CapturePointState.CaptureRatio;
 	}
 
 	// Set the current capture ratio
@@ -165,7 +194,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	const FGenericTeamId& GetCapturingTeam() const
 	{
-		return CapturingTeam;
+		return CapturePointState.CapturingTeam;
 	}
 
 	// Set the team that is currently capturing this point
@@ -176,14 +205,14 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool HasBeenCaptured() const
 	{
-		return bHasBeenCaptured;
+		return CapturePointState.bHasBeenCaptured;
 	}
 
 	// Return the team that has captured this point
 	UFUNCTION(BlueprintPure)
 	const FGenericTeamId& GetCapturedBy() const
 	{
-		return CapturedBy;
+		return CapturePointState.CapturedBy;
 	}
 
 	// Set the team that has captured this point
@@ -193,9 +222,7 @@ public:
 private:
 	// Callbacks for changed variables
 	void OnCaptureRatioChanged();
-	UFUNCTION()
 	void OnCapturingTeamChanged();
-	UFUNCTION()
 	void OnCapturedByChanged();
 
 	// Helper function to create the shape component, reuses the current one if the type matches

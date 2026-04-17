@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "UI/Input/InputActionConflict.h"
 #include "UI/Input/InputMethod.h"
 #include "UI/Input/InputActionAndAxisMapping.h"
@@ -39,7 +40,11 @@ public:
 	// ~Delegates
 
 	// ~Super Interface
+#if !BR_BUILD_VANILLA
+	virtual void ForceRebuildingKeyMaps(const bool bRestoreDefaults = false) override;
+#else
 	virtual void PostInitProperties() override;
+#endif
 	virtual void ProcessInputStack(const TArray<UInputComponent*>& InputComponentStack, const float DeltaTime, const bool bGamePaused) override;
 	virtual bool IsKeyHandledByAction(FKey Key) const override;
 	// ~Super Interface
@@ -105,9 +110,9 @@ private:
 				{
 					OutOverriddenActions.Add(ActionName);
 					OutMappings.RemoveAllSwap([ActionName](const auto& Mapping)
-						{
-							return Mapping.*NameMember == ActionName;
-						});
+					{
+						return Mapping.*NameMember == ActionName;
+					});
 				}
 
 				OutMappings.AddUnique(ActualMapping);

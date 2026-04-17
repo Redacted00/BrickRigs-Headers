@@ -19,7 +19,18 @@ enum class EBrickEditorViewMode : uint8
 	Default,
 	Wireframe,
 	Physics,
-	InputChannels
+	InputChannels,
+	Max
+};
+
+UENUM(BlueprintType)
+enum class EBrickEditorMirrorMode : uint8
+{
+	None,
+	X,
+	Y,
+	Z,
+	Max
 };
 
 UENUM(BlueprintType)

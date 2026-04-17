@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Online/BitfieldSerializer.h"
-#include "Serialization/FluSerializationStatics.h"
+#include "Serialization/SerializationHelper.h"
 #include "CoreMinimal.h"
 #include "ClientDamageInfo.generated.h"
 
@@ -37,7 +37,7 @@ public:
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
 		// Compress the damage
-		FFluSerializationStatics::SerializeFloatCompressed<uint8>(Ar, Damage, 0.f, 1.f);
+		FSerializationHelper::SerializeFloatCompressed(Ar, Damage, 0.f, 1.f, 8);
 		// Compress the attitude and flags into one byte
 		TBitfieldSerializer<uint8> Bitfield(Ar);
 		Bitfield.Add(TeamAttitude, 2);

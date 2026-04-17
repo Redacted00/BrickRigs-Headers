@@ -7,10 +7,8 @@
 #include "Properties/BrickPropertyEditInfo.h"
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "UI/Misc/UIFunctionLibrary.h"
 #include "PropertyWidget.generated.h"
 
-class UPropertyContainerWidget;
 class ABrickEditor;
 
 /**
@@ -23,8 +21,6 @@ class BRICKRIGS_API UPropertyWidget : public UUserWidget
 
 protected:
 	// ~Variables
-	// Our outer property container widget
-	TWeakObjectPtr<UPropertyContainerWidget> ContainerWidget;
 	// Our brick property handle
 	TSharedPtr<FBrickPropertyEditInfo> PropertyInfo;
 	// Whether this widget is currently being initialized
@@ -49,7 +45,7 @@ public:
 	// ~Super Interface
 
 	// Initialize this widget with the given container and property
-	void InitializeProperty(UPropertyContainerWidget* InContainerWidget, const TSharedRef<FBrickPropertyEditInfo>& InPropertyInfo);
+	void InitializeProperty(const TSharedRef<FBrickPropertyEditInfo>& InPropertyInfo);
 	// Updates the property state
 	virtual void UpdateProperty(const TSharedRef<FBrickPropertyEditInfo>& InPropertyInfo, const FBrickPropertyChangedEvent* ChangedEvent);
 	// Uninitialize the property, to stop listening for delegates etc.
@@ -57,27 +53,17 @@ public:
 	// Can be implemented to return a custom focused property name
 	virtual FName GetFocusedSubProperty(const FWidgetPath& FocusedWidgetPath) const
 	{
-		return GetFocusedSubProperty(FWidgetPathWrapper{FocusedWidgetPath});
+		return NAME_None;
 	}
-
-	// Blueprint version
-	UFUNCTION(BlueprintImplementableEvent)
-	FName GetFocusedSubProperty(const FWidgetPathWrapper& WidgetPath) const;
 
 private:
 	// Versions that can be overridden
 	virtual void InitializeProperty();
 	virtual void UninitializeProperty();
 	// Implement to update the displayed value
-	virtual void UpdateValue(const FBrickPropertyChangedEvent* ChangedEvent);
+	virtual void UpdateValue();
 
 protected:
-	UFUNCTION(BlueprintPure)
-	UPropertyContainerWidget* GetPropertyContainerWidget() const
-	{
-		return ContainerWidget.Get();
-	}
-
 	// Updates the read only state of the property
 	UFUNCTION(BlueprintNativeEvent)
 	void UpdateIsReadOnly(bool bNewReadOnly);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "OnlineSessionSettings.h"
 #include "CoreMinimal.h"
 
@@ -112,11 +113,18 @@ namespace FOnlineSessionUtils
 
 	inline FString GetSessionName(const FOnlineSessionSettings& SessionSettings)
 	{
+#if BR_BUILD_VANILLA
 		return "Unknown Session";
+#else
+		return SessionSettings.SessionName;
+#endif
 	}
 
 	inline void SetSessionName(FOnlineSessionSettings& SessionSettings, const FString& SessionName)
 	{
+#if !BR_BUILD_VANILLA
+		SessionSettings.SessionName = SessionName;
+#endif
 	}
 
 	// Search a keyword within the name of a session

@@ -38,14 +38,12 @@ public class BrickRigs : ModuleRules
 			"Projects",
 			"Water",
 			"PakFile",
+			"DLSSBlueprint",
 			"FluMoveSync",
+			"FluUGC",
 			"PacketHandler",
-			"NetCore",
-			"MeshDescription",
-			"StaticMeshDescription",
-			"FluUGC"
+			"NetCore"
 		});
-
 
 		DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
 

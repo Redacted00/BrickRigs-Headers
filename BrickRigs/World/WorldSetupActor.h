@@ -6,7 +6,6 @@
 #include "Settings/MatchSettings.h"
 #include "GameFramework/Actor.h"
 #include "Misc/BrickAssetManager.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "WorldSetupActor.generated.h"
 
 class UPostProcessComponent;
@@ -54,7 +53,7 @@ class BRICKRIGS_API AWorldSetupActor : public AActor
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnTimeOfDayChanged, float);
 
 	// ~Variables
-	FFluAsyncAssetLoader AssetLoader_AmbientSound;
+	FSmartStreamableHandle StreamableHandle_AmbientSound;
 	// Used to count down to the next lightning strike
 	FTimerHandle TimerHandle_Lightning;
 	// NOTE: These structs need to be UPROPERTY since they includes pointers

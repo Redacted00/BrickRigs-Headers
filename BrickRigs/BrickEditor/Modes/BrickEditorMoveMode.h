@@ -46,7 +46,7 @@ class BRICKRIGS_API UBrickEditorMoveMode : public UBrickEditorMode
 	uint8 bPreserveSpawnLocation : 1;
 	uint8 bPreserveSpawnRotation : 1;
 	// The mirror mode used for moving
-	EAxis::Type MirrorAxis;
+	EBrickEditorMirrorMode MirrorMode;
 	// Objects being used as the normal and mirrored move roots
 	TWeakObjectPtr<UBrickEditorObject> MoveRoot;
 	TWeakObjectPtr<UBrickEditorObject> MirroredMoveRoot;
@@ -151,4 +151,7 @@ private:
 	// Callbacks for the user settings
 	void OnSnappingSettingsChanged();
 	void OnGizmoWorldSpaceChanged(bool bNewWorldSpace);
+
+	// Property callbacks
+	static void GetMoveLocationValueRange(const FBrickPropertyContainer& Container, FVector& OutMin, FVector& OutMax);
 };

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Misc/FluAsyncAssetLoader.h"
+#include "Misc/BrickAssetManager.h"
 #include "UI/Widgets/MainWidgetBase.h"
 #include "HUDContainerWidget.generated.h"
 
@@ -19,7 +19,7 @@ class BRICKRIGS_API UHUDContainerWidget : public UMainWidgetBase
 
 	// ~Variables
 	// Used to load the HUD widget class
-	FFluAsyncAssetLoader AssetLoader_HUDWidgetClass;
+	FSmartStreamableHandle StreamableHandle_HUDWidgetClass;
 	// Game overlay widget instance
 	UPROPERTY(Transient)
 	UGameOverlayWidget* GameOverlayWidget;

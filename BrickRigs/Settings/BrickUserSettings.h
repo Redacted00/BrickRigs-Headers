@@ -15,15 +15,6 @@ class UBrickGameInstance;
 class USoundClass;
 class UInputCategory;
 
-USTRUCT()
-struct FBrickPropertySettings
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TMap<FName, FString> Settings;
-};
-
 /**
  * NOTE: These settings are saved in the game config and synchronized between devices.
  * Thus no device specific settings should be stored here!
@@ -43,13 +34,13 @@ class BRICKRIGS_API UBrickUserSettings : public UObject, public IBrickPropertyIn
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnCameraModeChanged, ECameraMode);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnChatContextChanged, EChatContext);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEditorUIScaleChanged, float);
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEditorMirrorAxisChanged, EAxis::Type);
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEditorMirrorModeChanged, EBrickEditorMirrorMode);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEditorViewModeChanged, EBrickEditorViewMode);
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEditorGizmoWorldSpaceChanged, bool);
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnColorDisplayModeChanged, const EColorDisplayMode, NewDisplayMode);
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnBrickUnitsDisplayModeChanged, const EBrickUnitsDisplayMode);
 
 public:
-	static constexpr auto MaxServerPasswordLength = 16;
+	static constexpr int32 MaxServerPasswordLength = 16;
 
 private:
 	// ~Variables
@@ -97,9 +88,6 @@ private:
 	EChatContext ChatContext;
 	UPROPERTY(Config)
 	TSubclassOf<UBrickUIStyle> UIStyle;
-	// Allows storing custom settings for properties
-	UPROPERTY(Config)
-	TMap<FName, FBrickPropertySettings> BrickPropertySettings;
 	// ~UI
 
 	// ~Gameplay
@@ -142,7 +130,7 @@ private:
 
 	// ~Brick Editor
 	UPROPERTY(Config)
-	TEnumAsByte<EAxis::Type> EditorMirrorAxis;
+	EBrickEditorMirrorMode EditorMirrorMode;
 	UPROPERTY(Config)
 	EBrickEditorViewMode EditorViewMode;
 	UPROPERTY(Config)
@@ -165,8 +153,6 @@ private:
 	bool bEditorGizmoWorldSpace;
 	UPROPERTY(Config)
 	EBrickUnitsDisplayMode BrickUnitsDisplayMode;
-	UPROPERTY(Config)
-	EColorDisplayMode ColorDisplayMode;
 	// ~Brick Editor
 
 	// ~Camera
@@ -194,13 +180,12 @@ public:
 	FOnChatContextChanged OnChatContextChangedDelegate;
 	FSimpleMulticastDelegate OnInputMappingFilterChangedDelegate;
 	FOnEditorUIScaleChanged OnEditorUIScaleChangedDelegate;
-	FOnEditorMirrorAxisChanged OnEditorMirrorAxisChangedDelegate;
+	FOnEditorMirrorModeChanged OnEditorMirrorModeChangedDelegate;
 	FOnEditorViewModeChanged OnEditorViewModeChangedDelegate;
 	FSimpleMulticastDelegate OnEditorWorldSetupParamsChangedDelegate;
 	FSimpleMulticastDelegate OnEditorSnappingSettingsChanged;
 	FOnEditorGizmoWorldSpaceChanged OnEditorGizmoWorldSpaceChanged;
-	UPROPERTY(BlueprintAssignable)
-	FOnColorDisplayModeChanged OnColorDisplayModeChanged;
+	FOnBrickUnitsDisplayModeChanged OnBrickUnitsDisplayModeChanged;
 	// ~Delegates
 
 	// Static accessor for the user settings singleton
@@ -229,32 +214,6 @@ public:
 		return UIStyle;
 	}
 
-	TOptional<FString> GetBrickPropertySetting(const FName& PropertyName, const FName& SettingName) const;
-
-	// Templated version
-	template <typename T>
-	TOptional<T> GetBrickPropertySetting(const FName& PropertyName, const FName& SettingName) const
-	{
-		const auto FoundValue = GetBrickPropertySetting(PropertyName, SettingName);
-		if (FoundValue.IsSet())
-		{
-			T OutValue;
-			LexFromString(OutValue, *FoundValue.GetValue());
-			return OutValue;
-		}
-
-		return TOptional<T>();
-	}
-
-	void SetBrickPropertySetting(const FName& PropertyName, const FName& SettingName, const FString& Value, const FString& DefaultValue);
-
-	// Templated version
-	template <typename T>
-	void SetBrickPropertySetting(const FName& PropertyName, const FName& SettingName, const T& Value, const T& DefaultValue)
-	{
-		SetBrickPropertySetting(PropertyName, SettingName, LexToString(Value), LexToString(DefaultValue));
-	}
-
 	// ~UI
 
 	auto GetFieldOfView() const
@@ -275,7 +234,7 @@ public:
 
 	void CycleCameraMode()
 	{
-		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), CameraMode, FGetEnumItems::CreateStatic(&ThisClass::GetCameraModeItems), false);
+		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), CameraMode, FGetEnumItems::CreateStatic(&ThisClass::GetCameraModeItems));
 	}
 
 	// Measurement system
@@ -291,7 +250,7 @@ public:
 
 	void CycleMeasurementSystem()
 	{
-		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), MeasurementSystem, FGetEnumItems::CreateStatic(&ThisClass::GetMeasurementSystemItems), true);
+		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), MeasurementSystem, FGetEnumItems::CreateStatic(&ThisClass::GetMeasurementSystemItems));
 	}
 
 	// HUD visibility
@@ -307,7 +266,7 @@ public:
 
 	void CycleHUDVisibility()
 	{
-		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), HUDVisibility, FGetEnumItems::CreateStatic(&ThisClass::GetHUDVisibilityItems), false);
+		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), HUDVisibility, FGetEnumItems::CreateStatic(&ThisClass::GetHUDVisibilityItems));
 	}
 
 	// Chat
@@ -323,7 +282,7 @@ public:
 
 	void CycleChatContext()
 	{
-		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), ChatContext, FGetEnumItems::CreateStatic(&ThisClass::GetChatContextItems), false);
+		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), ChatContext, FGetEnumItems::CreateStatic(&ThisClass::GetChatContextItems));
 	}
 
 	// Transmission mode
@@ -339,7 +298,7 @@ public:
 
 	void CycleTransmissionMode()
 	{
-		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), TransmissionMode, FGetEnumItems::CreateStatic(&ThisClass::GetTransmissionModeItems), false);
+		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), TransmissionMode, FGetEnumItems::CreateStatic(&ThisClass::GetTransmissionModeItems));
 	}
 
 	// Auto counter steering
@@ -350,7 +309,7 @@ public:
 
 	void ToggleAutoCounterSteeringEnabled()
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), bAutoCounterSteering, !bAutoCounterSteering, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), bAutoCounterSteering, !bAutoCounterSteering);
 	}
 
 	FText GetAutoCounterSteeringValueText() const;
@@ -389,14 +348,14 @@ public:
 	// ~Input
 
 	// ~Brick Editor
-	EAxis::Type GetEditorMirrorAxis() const
+	EBrickEditorMirrorMode GetEditorMirrorMode() const
 	{
-		return EditorMirrorAxis;
+		return EditorMirrorMode;
 	}
 
-	void SetEditorMirrorMode(const EAxis::Type NewAxis)
+	void SetEditorMirrorMode(EBrickEditorMirrorMode NewMode)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorMirrorAxis, TEnumAsByte(NewAxis), false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorMirrorMode, NewMode);
 	}
 
 	EBrickEditorViewMode GetEditorViewMode() const
@@ -406,7 +365,7 @@ public:
 
 	void SetEditorViewMode(EBrickEditorViewMode NewMode)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorViewMode, NewMode, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorViewMode, NewMode);
 	}
 
 	FText GetEditorViewModeDisplayName() const
@@ -456,7 +415,7 @@ public:
 
 	void SetEditorSnappingEnabled(bool bNewEnabled)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), bEditorSnappingEnabled, bNewEnabled, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), bEditorSnappingEnabled, bNewEnabled);
 	}
 
 	bool IsEditorGizmoWorldSpace() const
@@ -466,37 +425,17 @@ public:
 
 	void SetEditorGizmoWorldSpace(bool bNewWorldSpace)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), bEditorGizmoWorldSpace, bNewWorldSpace, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), bEditorGizmoWorldSpace, bNewWorldSpace);
 	}
 
-	UFUNCTION(BlueprintPure)
-	EBrickUnitsDisplayMode GetBrickUnitsDisplayMode() const
+	auto GetBrickUnitsDisplayMode() const
 	{
 		return BrickUnitsDisplayMode;
 	}
 
-	UFUNCTION(BlueprintCallable)
 	void SetBrickUnitsDisplayMode(const EBrickUnitsDisplayMode& NewMode)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), BrickUnitsDisplayMode, NewMode, true);
-	}
-
-	UFUNCTION(BlueprintCallable)
-	void CycleBrickUnitsDisplayMode()
-	{
-		FEnumBrickPropertyBase::CycleEnumPropertyExternal(FBrickPropertyContainer(this), BrickUnitsDisplayMode, FGetEnumItems::CreateStatic(&ThisClass::GetBrickUnitsDisplayModeItems), true);
-	}
-
-	UFUNCTION(BlueprintPure)
-	EColorDisplayMode GetColorDisplayMode() const
-	{
-		return ColorDisplayMode;
-	}
-
-	UFUNCTION(BlueprintCallable)
-	void SetColorDisplayMode(const EColorDisplayMode NewMode)
-	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), ColorDisplayMode, NewMode, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), BrickUnitsDisplayMode, NewMode);
 	}
 
 	// ~Brick Editor
@@ -509,7 +448,7 @@ public:
 
 	void SetEditorZoomRatio(float NewZoomRatio)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorZoomRatio, NewZoomRatio, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorZoomRatio, NewZoomRatio);
 	}
 
 	float GetEditorCameraSpeedRatio() const
@@ -519,7 +458,7 @@ public:
 
 	void SetEditorCameraSpeedRatio(float NewSpeedRatio)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorCameraSpeedRatio, NewSpeedRatio, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), EditorCameraSpeedRatio, NewSpeedRatio);
 	}
 
 	float GetFreeCamSpeedRatio() const
@@ -529,7 +468,7 @@ public:
 
 	void SetFreeCamSpeedRatio(float NewSpeedRatio)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), FreeCamSpeedRatio, NewSpeedRatio, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), FreeCamSpeedRatio, NewSpeedRatio);
 	}
 
 	float GetFreeCamShiftSpeedRatio() const
@@ -539,7 +478,7 @@ public:
 
 	void SetFreeCamShiftSpeedRatio(float NewSpeedRatio)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), FreeCamShiftSpeedRatio, NewSpeedRatio, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), FreeCamShiftSpeedRatio, NewSpeedRatio);
 	}
 
 	float GetProjectileCamZoomRatio() const
@@ -549,7 +488,7 @@ public:
 
 	void SetProjectileCamZoomRatio(float NewZoomRatio)
 	{
-		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), ProjectileCamZoomRatio, NewZoomRatio, false);
+		FBrickProperty::SetPropertyValueExternal(FBrickPropertyContainer(this), ProjectileCamZoomRatio, NewZoomRatio);
 	}
 
 	// ~Camera
@@ -597,9 +536,8 @@ private:
 	static void GetHUDVisibilityItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
 	static void GetChatContextItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
 	static void GetHostServerTypeItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
-	static void GetEditorMirrorAxisItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
+	static void GetEditorMirrorModeItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
 	static void GetEditorViewModeItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
-	static void GetBrickUnitsDisplayModeItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
 
 	// ~IBrickPropertyInterface
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;

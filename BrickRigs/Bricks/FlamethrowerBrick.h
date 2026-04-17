@@ -77,7 +77,7 @@ public:
 	UFlamethrowerBrick();
 
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;
 	virtual void OnBricksAddedOrRemovedFromCluster() override;

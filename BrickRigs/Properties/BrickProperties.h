@@ -7,6 +7,18 @@
 
 class USirenSequence;
 
+struct FDriverSeatBrickProperty : FEnumBrickPropertyBase
+{
+	DECLARE_BRICK_PROP(FDriverSeatBrickProperty, FEnumBrickPropertyBase);
+
+	// ~Super Interface
+	virtual bool GetValue(const FBrickPropertyContainer& Container, int32& OutValue) const override;
+	virtual bool SetValue(const FBrickPropertyContainer& Container, int32 NewValue) const override;
+	virtual void GetEnumItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems) const override;
+	virtual bool DoesObjectContainPropertyInternal(const UObject* InObject) const override;
+	// ~Super Interface
+};
+
 struct FUseExitLocationBrickProperty : FBoolBrickProperty
 {
 	DECLARE_BRICK_PROP(FUseExitLocationBrickProperty, FBoolBrickProperty);
@@ -94,48 +106,3 @@ struct FUGCTagsBrickProperty : FBrickProperty
 };
 
 DECLARE_BRICK_PROP_TYPE(FUGCTagsBrickProperty, FUGCTags);
-
-struct FObjectOrderBrickProperty : FNumericBrickPropertyBase
-{
-	DECLARE_BRICK_PROP(FObjectOrderBrickProperty, FNumericBrickPropertyBase);
-
-private:
-	// ~Variables
-	TBrickPropAttribute<UClass*> ObjectClass;
-	// ~Variables
-
-public:
-	// ~Constructor
-	FObjectOrderBrickProperty(const TBrickPropAttribute<UClass*>& ObjectClass)
-		: Super(ENumericValueType::Integer), ObjectClass(ObjectClass)
-	{
-	}
-
-	// ~Super Interface
-	virtual bool GetValue(const FBrickPropertyContainer& Container, FNumericBrickPropertyValue& OutValue) const override;
-	virtual bool SetValue(const FBrickPropertyContainer& Container, const FNumericBrickPropertyValue& NewValue) const override;
-	virtual FNumericBrickPropertyRange GetValueRange(const FBrickPropertyContainer& Container) const override;
-	// ~Super Interface
-
-	const UClass* GetObjectClass(const FBrickPropertyContainer& Container) const
-	{
-		return ObjectClass.Get(Container).Get(nullptr);
-	}
-};
-
-struct FThrusterForceBrickProperty : FNumericBrickPropertyBase
-{
-	DECLARE_BRICK_PROP(FThrusterForceBrickProperty, FNumericBrickPropertyBase);
-
-	// ~Constructor
-	FThrusterForceBrickProperty()
-		: Super(ENumericValueType::ForceAuto)
-	{
-	}
-
-	// ~Super Interface
-	virtual bool GetValue(const FBrickPropertyContainer& Container, FNumericBrickPropertyValue& OutValue) const override;
-	virtual bool SetValue(const FBrickPropertyContainer& Container, const FNumericBrickPropertyValue& NewValue) const override;
-	virtual FNumericBrickPropertyRange GetValueRange(const FBrickPropertyContainer& Container) const override;
-	// ~Super Interface
-};

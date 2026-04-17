@@ -76,7 +76,7 @@ public:
 		// Add a new category if needed
 		if (CurrentCategoryIndex == INDEX_NONE)
 		{
-			CurrentCategoryIndex = Categories.Add({DisplayName});
+			CurrentCategoryIndex = Categories.Emplace(DisplayName);
 		}
 	}
 

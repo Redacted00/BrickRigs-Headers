@@ -3,22 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DLSSLibrary.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Properties/BrickPropertyInterface.h"
 #include "MyUserSettings.generated.h"
-
-UENUM(BlueprintType)
-enum class EDLSSMode : uint8
-{
-	Off,
-	Auto,
-	DLAA,
-	UltraQuality,
-	Quality,
-	Balanced,
-	Performance,
-	UltraPerformance
-};
 
 class UBrickGameInstance;
 /**
@@ -35,13 +23,13 @@ protected:
 	uint8 bVideoSettingsDirty : 1;
 	// Flag set during the revert settings function
 	uint8 bIsRevertingVideoSettings : 1;
-
+	
 	UPROPERTY(Config)
 	bool bEnableDepthOfField = true;
 	UPROPERTY(Config)
 	bool bEnableRayTracing;
 	UPROPERTY(Config)
-	bool bEnableHDR;
+	UDLSSMode DLSSMode;
 	UPROPERTY(Config)
 	float MotionBlurScale = 1.f;
 	UPROPERTY(Config)
@@ -52,18 +40,14 @@ public:
 	// ~Delegates
 	TMulticastDelegate<void(bool)> OnVideoSettingsMarkedDirtyDelegate;
 	// ~Delegates
-
+	
 	// Returns our custom game user settings instance
 	UFUNCTION(BlueprintPure)
 	static UMyUserSettings* Get();
-
-	// ~Super Interface
-	virtual bool IsDirty() const override;
-	// ~Super Interface
-
+	
 	// Called upon the game instance start event
 	void OnGameInstanceStart(UBrickGameInstance* GameInstance);
-
+	
 	auto IsDepthOfFieldEnabled() const
 	{
 		return bEnableDepthOfField;
@@ -76,19 +60,14 @@ public:
 
 	// Applies the ray tracing enabled flag
 	void ApplyRayTracingEnabled();
-	// Applies the HDR enabled setting
-	void ApplyHDREnabled();
 	// Applies anti aliasing and DLSS settings
 	void ApplyAntiAliasingAndUpscalingSettings();
-
+	
 	// Whether the video settings are marked as dirty
 	bool AreVideoSettingsDirty() const
 	{
 		return bVideoSettingsDirty;
 	}
-
-	// Whether the frame rate limit has not been applied yet
-	bool IsFrameRateLimitDirty() const;
 
 	// Applies all pending video settings
 	void ApplyVideoSettings(bool& bOutChangedResolution);
@@ -110,9 +89,6 @@ private:
 
 	// Property callbacks
 	static void GetAntiAliasingMethodItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
-
-	// NOTE: This can't be inside a preprocessor block
-	UPROPERTY(Config)
-	EDLSSMode DLSSMode;
-
+	static void GetDLSSModeItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);
+	
 };

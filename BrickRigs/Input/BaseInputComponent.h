@@ -18,8 +18,8 @@ struct FBindInputActionsParams
 private:
 	struct FActionProperties
 	{
-		bool bRemovePrimary = false;
-		bool bRemoveSecondary = false;
+		uint8 bRemovePrimary : 1 = false;
+		uint8 bRemoveSecondary : 1 = false;
 	};
 
 	// ~Variables

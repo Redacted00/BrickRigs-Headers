@@ -16,8 +16,7 @@ enum struct ESensorType : uint8
 	Time,
 	Proximity,
 	DistanceToGround,
-	Altitude, // Relative to spawn location
-	AbsAltitude,
+	Altitude,
 	Pitch,
 	Yaw,
 	Roll,
@@ -26,12 +25,7 @@ enum struct ESensorType : uint8
 	NormalAcceleration,
 	NormalAngularSpeed,
 	NumSeekingProjectiles,
-	SeekingProjectileDistance,
-	DeltaTime,
-	Framerate,
-	TimeOfDay,
-	WindSpeed,
-	WindDirection,
+	SeekingProjectileDistance
 };
 
 UENUM()
@@ -45,14 +39,10 @@ enum struct EProximitySensorMask : uint8
 	Water
 };
 
-USTRUCT()
-struct FSensorBrickEditorParams : public FScalableBrickEditorParams
+struct FSensorBrickEditorParams : FBrickEditorParams
 {
-	GENERATED_BODY()
-
 	// Shows the proximity sensor range
-	TBrickEditorComponentPtr<UBrickEditorArrowComponent> MinArrowComponent;
-	TBrickEditorComponentPtr<UBrickEditorArrowComponent> MaxArrowComponent;
+	TBrickEditorComponentPtr<UBrickEditorArrowComponent> ArrowComponent;
 };
 
 UCLASS(Abstract)
@@ -78,6 +68,8 @@ class BRICKRIGS_API USensorBrick : public USensorBrickBase
 	uint8 bEnabledInputValue : 1;
 	// Whether the sensor is currently enabled and updating
 	uint8 bIsSensorActive : 1;
+	// Whether the sensor value needs to be updated at least once
+	uint8 bNeedsInitialSensorUpdate : 1;
 	// The world time the sensor has been activated
 	float ActivationTime;
 	// Used to measure the relative movement between ticks or the absolute movement since activation
@@ -104,7 +96,7 @@ public:
 	USensorBrick();
 
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UpdateEditorVisualization() override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;
@@ -121,7 +113,7 @@ public:
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FSensorBrickEditorParams>();
+		return MakeUnique<FSensorBrickEditorParams>();
 	}
 
 	// ~Super Interface
@@ -143,14 +135,13 @@ private:
 	float UpdateSensorInput(float DeltaTime);
 	// Returns the ray parameters for sensor traces
 	bool GetSensorTraceRay(const FTransform& WorldTransform, FVector& OutStart, FVector& OutDir) const;
-
 	// Returns the minimum trace distance
 	float GetMinSensorTraceDistance() const
 	{
 		// Convert from meters to centimeters
 		return FMath::Min(OutputChannel.MinIn, OutputChannel.MaxIn) * 100.f;
 	}
-	
+
 	// Returns the trace distance to use
 	float GetMaxSensorTraceDistance() const
 	{

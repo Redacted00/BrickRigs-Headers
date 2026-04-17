@@ -11,7 +11,7 @@
 class ABrickPlayerState;
 class UScoreboardPlayerWidget;
 class UBrickTextBlock;
-class UBrickGridPanel;
+class UGridPanel;
 class UBrickTeam;
 
 /**
@@ -52,7 +52,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UBrickTextBlock* ScoreTextBlock;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* PlayersPanel;
+	UGridPanel* PlayersPanel;
 	// ~Widgets
 
 	// ~Properties

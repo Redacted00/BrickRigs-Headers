@@ -21,7 +21,7 @@ class BRICKRIGS_API ABrickVehicleDownloadReplicator : public AActor
 	UPROPERTY(Transient, Replicated)
 	ABrickPlayerController* SpawningPC;
 	UPROPERTY(Transient, Replicated)
-	FText VehicleDisplayName;
+	FString VehicleDisplayName;
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_DownloadProgress)
 	uint8 DownloadProgress;
 	UFUNCTION()
@@ -39,7 +39,7 @@ public:
 	virtual void Tick(const float DeltaTime) override;
 	// ~Super Interface
 
-	void InitDownloadReplicator(ABrickVehicle* InVehicle, ABrickPlayerController* InSpawningPC, const FText& InDisplayName);
+	void InitDownloadReplicator(ABrickVehicle* InVehicle, ABrickPlayerController* InSpawningPC, const FString& InDisplayName);
 
 	// Get the replicated download percentage
 	float GetDownloadProgress() const
@@ -53,7 +53,7 @@ public:
 	// Get the replicated vehicle name
 	auto GetVehicleDisplayName() const
 	{
-		return VehicleDisplayName;
+		return FText::AsCultureInvariant(VehicleDisplayName);
 	}
 
 private:

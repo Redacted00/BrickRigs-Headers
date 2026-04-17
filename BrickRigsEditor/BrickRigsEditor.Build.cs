@@ -9,12 +9,12 @@ public class BrickRigsEditor : ModuleRules
 		CppStandard = CppStandardVersion.Latest;
 		OverridePackageType = PackageOverrideType.GameUncookedOnly;
 
-		PublicIncludePaths.AddRange(new[]
+		PublicIncludePaths.AddRange(new string[]
 		{
 			"BrickRigsEditor"
 		});
 
-		PublicDependencyModuleNames.AddRange(new[]
+		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"BrickRigs",
 			"Core",
@@ -24,7 +24,8 @@ public class BrickRigsEditor : ModuleRules
 		});
 
 		if (Target.bBuildEditor)
-			PrivateDependencyModuleNames.AddRange(new[]
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"AnimGraphRuntime",
 				"AnimationCore",
@@ -37,5 +38,6 @@ public class BrickRigsEditor : ModuleRules
 				"Foliage",
 				"Landscape"
 			});
+		}
 	}
 }

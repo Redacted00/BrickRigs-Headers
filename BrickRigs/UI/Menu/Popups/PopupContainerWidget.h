@@ -5,7 +5,6 @@
 #include "PopupParams.h"
 #include "CoreMinimal.h"
 #include "Misc/BrickAssetManager.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "UI/Widgets/MainWidgetBase.h"
 #include "PopupContainerWidget.generated.h"
 
@@ -22,7 +21,7 @@ class BRICKRIGS_API UPopupContainerWidget : public UMainWidgetBase
 
 	// ~Variables
 	// Handle used to load the popup content class
-	FFluAsyncAssetLoader AssetLoader_PopupClass;
+	FSmartStreamableHandle StreamableHandle_PopupClass;
 	// The handle of this popup
 	FPopupHandle PopupHandle;
 	// The cached popup params associated with this popup

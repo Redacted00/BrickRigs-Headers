@@ -5,7 +5,7 @@
 #include "Bricks/Misc/ActuatorTypes.h"
 #include "Bricks/Misc/BrickCarryInfo.h"
 #include "Vehicle/VehicleInput.h"
-#include "Misc/FluTimer.h"
+#include "Misc/BrickTimer.h"
 #include "Components/FirearmComponent.h"
 #include "Inventory/InventorySlot.h"
 #include "Items/InventoryItem.h"
@@ -39,7 +39,7 @@ private:
 
 	// ~Variables
 	// Used by the client to revert their item if it couldn't be replicated in time
-	FFluRealTimer Timer_RevertCurrentItem;
+	FBrickTimer Timer_RevertCurrentItem;
 	// Whether RegisteredAllComponents has been called yet
 	uint8 bRegisteredAllComponents : 1;
 

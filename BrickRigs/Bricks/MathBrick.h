@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ScalableBrick.h"
+#include "Brick.h"
 #include "MathBrick.generated.h"
 
 UENUM(BlueprintType)
@@ -42,7 +42,7 @@ enum class EMathBrickOperation : uint8
 };
 
 UCLASS(Abstract)
-class BRICKRIGS_API UMathBrickStaticInfo : public UScalableBrickStaticInfo
+class BRICKRIGS_API UMathBrickStaticInfo : public UBrickStaticInfo
 {
 	GENERATED_BODY()
 
@@ -55,15 +55,9 @@ public:
  * 
  */
 UCLASS()
-class BRICKRIGS_API UMathBrick : public UScalableBrick
+class BRICKRIGS_API UMathBrick : public UBrick
 {
 	GENERATED_BODY()
-
-	enum class EMathBrickPrimitiveData : uint8
-	{
-		Output = Max,
-		Max = Output + 1
-	};
 
 	// ~Variables
 	uint8 InputChannelDirtyCount;
@@ -90,8 +84,7 @@ public:
 
 	// ~Super Interface
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
-	virtual void SetupCreateRootComponentParams(FBrickEditorPrimitiveComponentParams& Params) override;
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void PreRepairBrick(const FTransform& SpawnTransform) override;
 	virtual void RepairBrick() override;
@@ -130,11 +123,6 @@ private:
 		InputChannelDirtyCount = 2;
 		UpdateBrickTickEnabled();
 	}
-
-	// Updates the output channel value
-	void SetOutputChannel(const float Value, const bool bInRepairing);
-	// Returns the value to use for the material parameter
-	float GetOutputMaterialParam() const;
 
 	// Property callbacks
 	static void GetOperationItems(const FBrickPropertyContainer& Container, TArray<FEnumPropertyItem>& OutItems);

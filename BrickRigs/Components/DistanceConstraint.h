@@ -63,9 +63,13 @@ public:
 	~FDistanceConstraint();
 
 	// Delete copy and move operators
-	FDistanceConstraint(const FDistanceConstraint&) = delete;
+	const FDistanceConstraint (
+	const FDistanceConstraint&
+	)
+	=
+	delete;
 	const FDistanceConstraint& operator=(const FDistanceConstraint&) = delete;
-	FDistanceConstraint(FDistanceConstraint&&) = delete;
+	const FDistanceConstraint (FDistanceConstraint&&) = delete;
 	const FDistanceConstraint& operator=(FDistanceConstraint&&) = delete;
 
 	// Updates the constrained components
@@ -98,7 +102,7 @@ private:
 };
 
 template <>
-struct TStructOpsTypeTraits<FDistanceConstraint> : TStructOpsTypeTraitsBase2<FDistanceConstraint>
+struct TStructOpsTypeTraits<FDistanceConstraint> : public TStructOpsTypeTraitsBase2<FDistanceConstraint>
 {
 	enum
 	{

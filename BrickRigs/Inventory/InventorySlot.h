@@ -17,10 +17,10 @@ struct FInventorySlotID
 protected:
 	// The unique ID
 	UPROPERTY(BlueprintReadWrite)
-	int32 ID;
+	uint8 ID;
 
 public:
-	constexpr static auto MaxSlotID = static_cast<int32>(MAX_uint16);
+	constexpr static auto MaxSlotID = MAX_uint8;
 
 	// Default constructor generates an invalid slot
 	FInventorySlotID(int32 Index = INDEX_NONE)
@@ -86,11 +86,7 @@ public:
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		// Serialize as uint16
-		auto LocalID = static_cast<uint16>(ID);
-		Ar << LocalID;
-		ID = LocalID;
-		
+		Ar << ID;
 		return !Ar.IsError();
 	}
 
@@ -135,7 +131,7 @@ protected:
 public:
 	// ~Statics
 	// Max allowed number of items in a slot, this is limited because of net serialization
-	constexpr static auto MaxAmount = static_cast<int32>(MAX_uint16) - 1;
+	constexpr static auto MaxAmount = static_cast<int32>(MAX_uint16);
 	// ~Statics
 
 	FInventorySlot(const FInventorySlotID& InSlotID = FInventorySlotID(), const FInventoryItemRef& InItemRef = FInventoryItemRef(), int32 InAmount = 0)

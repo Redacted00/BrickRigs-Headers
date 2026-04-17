@@ -122,8 +122,9 @@ public:
 
 	// ~Super Interface
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickConnections() override;
 	virtual void SetupVehicleInventory(FInventoryProperties& OutProperties, FInventoryLoadout& OutLoadout) override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void OnBricksAddedOrRemovedFromCluster() override;

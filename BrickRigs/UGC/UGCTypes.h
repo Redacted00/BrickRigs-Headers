@@ -155,15 +155,15 @@ struct FUGCTags
 	{
 		// Helper lambda used to add tags
 		auto AddTag = [&](const UEnum* Enum, auto EnumValue, auto NoneValue)
+		{
+			if (EnumValue != NoneValue)
 			{
-				if (EnumValue != NoneValue)
-				{
-					auto TagString = Enum->GetNameStringByIndex(static_cast<int32>(EnumValue));
-					// Remove the prefix for numbers
-					TagString.RemoveFromStart(TEXT("_"));
-					OutTags.Add(TagString);
-				}
-			};
+				auto TagString = Enum->GetNameStringByIndex(static_cast<int32>(EnumValue));
+				// Remove the prefix for numbers
+				TagString.RemoveFromStart(TEXT("_"));
+				OutTags.Add(TagString);
+			}
+		};
 
 		AddTag(StaticEnum<EUGCTypeTag>(), Type, EUGCTypeTag::None);
 		AddTag(StaticEnum<EUGCEraTag>(), Era, EUGCEraTag::None);
@@ -172,20 +172,42 @@ struct FUGCTags
 
 	void ImportTags(const TArray<FString>& InTags)
 	{
+		// Remove spaces from the tags and add an underscore before numbers
 		auto ConvertedTags = InTags;
 		for (auto& Tag : ConvertedTags)
 		{
-			// Remove spaces from the tags and add an underscore before numbers
-			auto ConvertedTag = Tag;
-			if (ConvertedTag.Len() && FChar::IsDigit(ConvertedTag[0]))
+			if (Tag.Len() && FChar::IsDigit(Tag[0]))
 			{
-				ConvertedTag.InsertAt(0, "_");
+				Tag.InsertAt(0, "_");
 			}
-
-			Type = FFluEnumStatics::StringToValue<EUGCTypeTag>(ConvertedTag).Get(Type);
-			Era = FFluEnumStatics::StringToValue<EUGCEraTag>(ConvertedTag).Get(Era);
-			Department = FFluEnumStatics::StringToValue<EUGCDepartmentTag>(ConvertedTag).Get(Department);
 		}
+
+		// Helper lambda used to find the tag for each category
+		auto FindTag = [&]<typename T>(const UEnum* Enum, T& OutValue, T Fallback)
+		{
+			OutValue = Fallback;
+
+			for (const auto& Tag : ConvertedTags)
+			{
+				// Add an underscore before digits
+				auto TagString = Tag;
+				if (TagString.Len() && FChar::IsDigit(TagString[0]))
+				{
+					TagString.InsertAt(0, "_");
+				}
+
+				const auto EnumValue = Enum->GetValueByNameString(*TagString);
+				if (EnumValue != INDEX_NONE)
+				{
+					OutValue = static_cast<T>(EnumValue);
+					break;
+				}
+			}
+		};
+
+		FindTag(StaticEnum<EUGCTypeTag>(), Type, EUGCTypeTag::None);
+		FindTag(StaticEnum<EUGCEraTag>(), Era, EUGCEraTag::None);
+		FindTag(StaticEnum<EUGCDepartmentTag>(), Department, EUGCDepartmentTag::None);
 	}
 
 	// Outputs a localized list of tags
@@ -195,20 +217,20 @@ struct FUGCTags
 
 		// Helper lambda used to add a tag
 		auto AddTag = [&](auto EnumValue, auto NoneValue, auto DisplayNameGetter)
+		{
+			if (EnumValue != NoneValue)
 			{
-				if (EnumValue != NoneValue)
+				const auto ValueText = DisplayNameGetter(EnumValue);
+				if (OutText.IsEmpty())
 				{
-					const auto ValueText = DisplayNameGetter(EnumValue);
-					if (OutText.IsEmpty())
-					{
-						OutText = ValueText;
-					}
-					else
-					{
-						OutText = FText::Format(INVTEXT("{0}, {1}"), OutText, ValueText);
-					}
+					OutText = ValueText;
 				}
-			};
+				else
+				{
+					OutText = FText::Format(INVTEXT("{0}, {1}"), OutText, ValueText);
+				}
+			}
+		};
 
 		AddTag(Type, EUGCTypeTag::None, GetTypeDisplayName);
 		AddTag(Era, EUGCEraTag::None, GetEraDisplayName);
@@ -240,7 +262,7 @@ protected:
 	EUGCType UGCType;
 	// Version the file has been saved with
 	UPROPERTY()
-	uint8 Version;
+	FBrickRigsSaveVersion Version;
 	// The version of content represented, i.e. auto save, a backup etc.
 	UPROPERTY()
 	EUGCContentVersion ContentVersion;
@@ -306,22 +328,22 @@ public:
 	// IMPORTANT: Setting Mass to -1 means it hasn't been initialized yet, which prevents it from being displayed in the UGC browser as 0
 	FUGCFileInfo(EUGCFileType InFileType = EUGCFileType::None, EUGCType InUGCType = EUGCType::None, const FBrickRigsSaveVersion& InVersion = BR_SAVE_VERSION, const FString& InLocalItemId = FString(), const TSharedPtr<FFluUGCItemId>& InOnlineItemId = nullptr, const TArray<uint8>& InItemData = {})
 		: FileType(InFileType)
-		, UGCType(InUGCType)
-		, Version(InVersion)
-		, ContentVersion(EUGCContentVersion::Default)
-		, LocalItemId(InLocalItemId)
-		, OnlineItemId(InOnlineItemId)
-		, ItemData(InItemData)
-		, NumObjects(0)
-		, Dimensions(FVector::ZeroVector)
-		, Mass(-1.f)
-		, Price(-1.f)
-		, TimeCreated(FDateTime::UtcNow())
-		, TimeUpdated(FDateTime::UtcNow())
-		, AuthorId(nullptr)
-		, TimePlayedWeek(0)
-		, TimePlayedTotal(0)
-		, Visibility(EFluUGCVisibility::Unlisted)
+		  , UGCType(InUGCType)
+		  , Version(InVersion)
+		  , ContentVersion(EUGCContentVersion::Default)
+		  , LocalItemId(InLocalItemId)
+		  , OnlineItemId(InOnlineItemId)
+		  , ItemData(InItemData)
+		  , NumObjects(0)
+		  , Dimensions(FVector::ZeroVector)
+		  , Mass(-1.f)
+		  , Price(-1.f)
+		  , TimeCreated(FDateTime::UtcNow())
+		  , TimeUpdated(FDateTime::UtcNow())
+		  , AuthorId(nullptr)
+		  , TimePlayedWeek(0)
+		  , TimePlayedTotal(0)
+		  , Visibility(EFluUGCVisibility::Unlisted)
 	{
 	}
 
@@ -608,16 +630,22 @@ public:
 	void ExportOnlineKeyValueTags(TMap<FString, FString>& OutKeyValueTags) const
 	{
 		// Add the UGC type tag
-		OutKeyValueTags.Add("Type", FFluEnumStatics::ValueToString(UGCType));
+		const auto* UGCTypeEnum = StaticEnum<EUGCType>();
+		OutKeyValueTags.Add("Type", UGCTypeEnum->GetNameStringByIndex(static_cast<int32>(UGCType)));
 	}
 
 	void ImportOnlineKeyValueTags(const TMap<FString, FString>& InKeyValueTags)
 	{
 		// Try to get the type value
 		const auto* UGCTypeEnum = StaticEnum<EUGCType>();
-		if (const auto* TypeString = InKeyValueTags.Find("Type"))
+		const auto* TypeString = InKeyValueTags.Find("Type");
+		const auto TypeValue = TypeString ? UGCTypeEnum->GetValueByNameString(*TypeString) : NAME_None;
+		const auto NewType = TypeValue != INDEX_NONE ? static_cast<EUGCType>(TypeValue) : EUGCType::None;
+
+		// NOTE: Don't change the default type of the key value tag isn't set, because none items can't be loaded
+		if (NewType != EUGCType::None)
 		{
-			UGCType = FFluEnumStatics::StringToValue<EUGCType>(*TypeString).Get(UGCType);
+			UGCType = NewType;
 		}
 	}
 
@@ -635,7 +663,7 @@ public:
 	{
 		FString Result;
 		constexpr auto Delimiter = static_cast<TCHAR>(';');
-		Result += LexToString(Version) + Delimiter;
+		Result += Version.ToString() + Delimiter;
 		Result += FString::FromInt(NumObjects) + Delimiter;
 		Result += Dimensions.ToString() + Delimiter;
 		Result += FString::SanitizeFloat(Mass) + Delimiter;
@@ -650,7 +678,7 @@ public:
 
 		if (Array.IsValidIndex(0))
 		{
-			LexFromString(Version, *Array[0]);
+			Version.FromString(Array[0]);
 		}
 		if (Array.IsValidIndex(1))
 		{
@@ -777,7 +805,7 @@ struct FUGCQueryResult
 	}
 
 private:
-	template <typename T, T FUGCFileInfo::* Property>
+	template <typename T, T FUGCFileInfo::*Property>
 	int32 SortHelper(const FUGCQueryResult& Other, bool bAscening) const
 	{
 		const auto& A = FileInfo.*Property;

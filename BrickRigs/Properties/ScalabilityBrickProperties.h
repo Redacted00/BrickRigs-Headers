@@ -43,7 +43,7 @@ public:
 		GConfig->GetSingleLineArray(TEXT("ScalabilitySettings"), TEXT("PerfIndexValues_ResolutionQuality"), ResolutionValueStrings, GScalabilityIni);
 
 		ResolutionScaleOptions.Reserve(ResolutionValueStrings.Num());
-		for (auto i = 0; i < ResolutionValueStrings.Num(); ++i)
+		for (int32 i = 0; i < ResolutionValueStrings.Num(); ++i)
 		{
 			ResolutionScaleOptions.Add(FCString::Atof(*ResolutionValueStrings[i]));
 		}
@@ -166,13 +166,13 @@ struct FFrameRateLimitBrickProperty : FNumericBrickPropertyBase
 	DECLARE_BRICK_PROP(FFrameRateLimitBickProperty, FNumericBrickPropertyBase);
 
 	// ~Constructor
-	FFrameRateLimitBrickProperty(const FNumericBrickPropertyRange& ValueRange)
-		: FNumericBrickPropertyBase(ENumericValueType::Integer, ValueRange)
+	FFrameRateLimitBrickProperty(const FFloatInterval& InValueRange)
+		: FNumericBrickPropertyBase(InValueRange, FGetValueRange(), ENumericValueType::Integer)
 	{
 	}
 
 	// ~Super Interface
-	virtual bool GetValue(const FBrickPropertyContainer& Container, FNumericBrickPropertyValue& OutValue) const override;
-	virtual bool SetValue(const FBrickPropertyContainer& Container, const FNumericBrickPropertyValue& NewValue) const override;
+	virtual bool GetValue(const FBrickPropertyContainer& Container, float& OutValue) const override;
+	virtual bool SetValue(const FBrickPropertyContainer& Container, float NewValue) const override;
 	// ~Super Interface
 };

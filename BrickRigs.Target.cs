@@ -4,15 +4,22 @@ using UnrealBuildTool;
 
 public class BrickRigsTarget : TargetRules
 {
-	protected bool bBuildModKit = true;
-
 	public BrickRigsTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
+		bUsesSteam = true;
 		ExtraModuleNames.AddRange(new[] { "BrickRigs" });
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 
+		// Setup the steam definitions
+		GlobalDefinitions.Add("UE4_PROJECT_STEAMSHIPPINGID=552100");
+		GlobalDefinitions.Add("UE4_PROJECT_STEAMPRODUCTNAME=\"BrickRigs\"");
+		// This has to be empty, used for mod directories
+		GlobalDefinitions.Add("UE4_PROJECT_STEAMGAMEDIR=\"BrickRigs\"");
+		GlobalDefinitions.Add("UE4_PROJECT_STEAMGAMEDESC=\"Brick Rigs\"");
+		// Allows the console to be used in shipping builds
+		//GlobalDefinitions.Add("ALLOW_CONSOLE_IN_SHIPPING=1");
 
-		ProjectDefinitions.Add("FLU_BUILD_MODKIT=" + (bBuildModKit ? "1" : "0"));
+		ProjectDefinitions.Add("BR_STEAMAPPID=552100");
 	}
 }

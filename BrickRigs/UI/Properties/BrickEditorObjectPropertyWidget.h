@@ -18,7 +18,7 @@ class BRICKRIGS_API UBrickEditorObjectPropertyWidget : public UPropertyWidget
 public:
 	// ~Super Interface
 	virtual void InitializeProperty() override;
-	virtual void UpdateValue(const FBrickPropertyChangedEvent* ChangedEvent) override;
+	virtual void UpdateValue() override;
 	virtual void GetSupportedPropertyTypes(TArray<FName>& OutTypes) const override;
 	// ~Super Interface
 

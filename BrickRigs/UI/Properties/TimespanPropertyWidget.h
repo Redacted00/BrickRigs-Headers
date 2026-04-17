@@ -16,7 +16,7 @@ class BRICKRIGS_API UTimespanPropertyWidget : public UPropertyWidget
 
 public:
 	// ~Super Interface
-	virtual void UpdateValue(const FBrickPropertyChangedEvent* ChangedEvent) override;
+	virtual void UpdateValue() override;
 	virtual void GetSupportedPropertyTypes(TArray<FName>& OutTypes) const override;
 	// ~Super Interface
 

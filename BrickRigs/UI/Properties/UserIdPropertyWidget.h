@@ -32,7 +32,7 @@ public:
 	// ~Super Interface
 	virtual bool Initialize() override;
 	virtual void UninitializeProperty() override;
-	virtual void UpdateValue(const FBrickPropertyChangedEvent* ChangedEvent) override;
+	virtual void UpdateValue() override;
 	virtual void GetSupportedPropertyTypes(TArray<FName>& OutTypes) const override;
 	// ~Super Interface
 

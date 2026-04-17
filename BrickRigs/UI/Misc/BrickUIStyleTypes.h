@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Misc/FluEnumStatics.h"
 #include "BrickUIStyleTypes.generated.h"
 
 class UBrickUIStyle;
@@ -81,7 +80,7 @@ struct FBrickUIBrushStyle
 		{
 			return Fallback;
 		}
-		return Brushes[FFluEnumStatics::ValueToIndex(InStyleState)];
+		return Brushes[static_cast<int32>(InStyleState)];
 	}
 };
 
@@ -162,7 +161,6 @@ enum class EBrickUIIconAtlas : uint8
 	SocialMediaIcons,
 	WeatherIcons,
 	ConnectorSpacingIcons,
-	SpinnerBrickShapeIcons,
 	Custom,
 	Max UMETA(Hidden)
 };

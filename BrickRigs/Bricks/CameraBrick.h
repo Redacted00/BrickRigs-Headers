@@ -71,9 +71,6 @@ class BRICKRIGS_API UCameraBrick : public UBrick, public IViewTargetInterface
 
 public:
 	// ~Brick Properties
-	// Custom display name for the camera
-	UPROPERTY(EditDefaultsOnly, Category = Seat)
-	FString CameraName;
 	// Exclusive seat this camera can be accessed from
 	UPROPERTY(EditDefaultsOnly, Category = Actuator)
 	FBrickEditorObjectPtr OwningSeat;
@@ -90,8 +87,6 @@ public:
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	// ~Super Interface
 
-	// Returns the name to display for the camera
-	FText GetCameraDisplayName(const USeatBrick* Seat) const;
 	// Used to get the desired view info for the camera
 	virtual void GetCameraBrickView(float DeltaTime, FMinimalViewInfo& DesiredView);
 	// Traces against world geometry from the current POV

@@ -12,7 +12,6 @@ enum class EScopedOperationFlags : uint8
 	RemoveObjects,
 	MoveObjects,
 	EditProperties,
-	ObjectOrder
 };
 
 struct FBrickEditorScopedOperation
@@ -29,7 +28,7 @@ struct FBrickEditorScopedOperation
 
 	bool IsModified(EScopedOperationFlags InFlag) const
 	{
-		return (RootScope->Flags & 1 << static_cast<int32>(InFlag)) != 0;
+		return (RootScope->Flags & (1 << static_cast<int32>(InFlag))) != 0;
 	}
 
 	bool IsAnythingModified() const

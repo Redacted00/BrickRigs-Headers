@@ -211,7 +211,7 @@ public:
 	// Takes a location and makes sure it is within bounds (optionally inflating or deflating it), returns true if it was outside
 	bool ConstraintLocationToEditorBounds(FVector& InOutLocation, float Inflation = 0.f) const;
 	// Returns the current mirror mode
-	EAxis::Type GetMirrorAxis() const;
+	EBrickEditorMirrorMode GetMirrorMode() const;
 	// Returns the current view mode
 	EBrickEditorViewMode GetViewMode() const;
 

@@ -3,7 +3,7 @@
 #include "Bricks/Misc/BrickDamage.h"
 #include "CoreMinimal.h"
 #include "Misc/DynamicBitfield.h"
-#include "Serialization/FluSerializationStatics.h"
+#include "Serialization/SerializationHelper.h"
 #include "VehicleDamage.generated.h"
 
 // The FRepBrickConnectionDamage struct is used to replicate the vehicle condition more efficiently across the network.
@@ -134,7 +134,7 @@ struct FBrickConnectionDamageBitfield
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		FFluSerializationStatics::NetSerializeArray<uint16>(Ar, Map, bOutSuccess, Items);
+		FSerializationHelper::NetSerializeArray<uint16>(Ar, Map, bOutSuccess, Items);
 		return !Ar.IsError();
 	}
 };

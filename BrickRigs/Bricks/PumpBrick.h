@@ -45,7 +45,7 @@ protected:
 
 public:
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 
 	virtual bool HasAnyInputChannel() const override
 	{

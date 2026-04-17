@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Misc/ConstExpressions.h"
+#include "BrickStatics.h"
 
 enum class EBrickDamageState : uint8
 {
@@ -16,7 +16,7 @@ struct FBrickDamage
 {
 private:
 	constexpr static auto NumDamageStateBits = 2;
-	constexpr static auto DamageStateBitmask = FConstExpressions::GenerateIntWithLeadingOnes<uint8>(NumDamageStateBits);
+	constexpr static auto DamageStateBitmask = UBrickStatics::GenerateIntWithLeadingOnes<uint8>(NumDamageStateBits);
 	constexpr static auto FireBitmask = static_cast<uint8>(1 << NumDamageStateBits);
 
 	// Make sure the damage state can be contained within 2 bits

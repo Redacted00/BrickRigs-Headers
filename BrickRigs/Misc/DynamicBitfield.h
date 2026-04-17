@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BrickStatics.h"
 #include "Online/BitfieldSerializer.h"
-#include "Misc/ConstExpressions.h"
 
 // The dynamic bitfield struct sparsely stores a small amount of data (like a bool) for a large amount of elements
 // This is useful to reduce the memory cost for replicating broken vehicle connections for example
@@ -18,8 +18,8 @@ struct TDynamicBitfieldChunk
 	const static uint16 NumElementsPerChunk = NumBitfields * NumElementsPerBitfield;
 	const static FBitfieldType NumBitsPerBitfieldUsed = NumElementsPerBitfield * NumBitsPerElement;
 	const static FBitfieldType NumBytesPerChunk = NumBitfields * NumBytesPerBitfield;
-	const static FBitfieldType MaxBitfieldValue = FConstExpressions::GenerateIntWithLeadingOnes<FBitfieldType>(NumBitsPerBitfieldUsed);
-	const static FBitfieldType FirstElementBitmask = FConstExpressions::GenerateIntWithLeadingOnes<FBitfieldType>(NumBitsPerElement);
+	const static FBitfieldType MaxBitfieldValue = UBrickStatics::GenerateIntWithLeadingOnes<FBitfieldType>(NumBitsPerBitfieldUsed);
+	const static FBitfieldType FirstElementBitmask = UBrickStatics::GenerateIntWithLeadingOnes<FBitfieldType>(NumBitsPerElement);
 
 private:
 	// ~Variables

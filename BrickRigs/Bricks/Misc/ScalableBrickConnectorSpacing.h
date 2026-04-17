@@ -1,15 +1,11 @@
 #pragma once
 
-#include "Misc/FluMathStatics.h"
-#include "Misc/ConstExpressions.h"
 #include "Vehicle/BrickConnection.h"
 #include "CoreMinimal.h"
+#include "BrickStatics.h"
 #include "ScalableBrickConnectorSpacing.generated.h"
 
-// Flags indicate if the axes are visible/editable, the order is +X, -X, +Y, -Y, +Z, -Z
-using FConnectorSpacingAxisFlags = uint8;
-
-// Stores the compressed per axis spacing enum for scalable bricks
+// This struct is used to store the compressed per axis spacing enum for scalable bricks
 USTRUCT(BlueprintType)
 struct FScalableBrickConnectorSpacing
 {
@@ -17,7 +13,7 @@ struct FScalableBrickConnectorSpacing
 
 	static constexpr auto NumBitsPerAxis = 2;
 	static constexpr auto NumBitsPerAxisPair = NumBitsPerAxis * 2;
-	static constexpr auto AxisBitmask = FConstExpressions::GenerateIntWithLeadingOnes(NumBitsPerAxis);
+	static constexpr auto AxisBitmask = UBrickStatics::GenerateIntWithLeadingOnes(NumBitsPerAxis);
 
 	// ~Constructor
 	FScalableBrickConnectorSpacing()
@@ -25,43 +21,33 @@ struct FScalableBrickConnectorSpacing
 	{
 	}
 
-	void SetSpacing(const EFluAxisSigned Axis, const EConnectorSpacing NewSpacing)
+	void SetSpacing(EAxis::Type Axis, bool bPositiveAxis, EConnectorSpacing NewSpacing)
 	{
-		const auto AxisOffset = GetAxisOffset(Axis);
+		const auto AxisOffset = GetAxisOffset(Axis, bPositiveAxis);
 		Data &= ~(AxisBitmask << AxisOffset);
 		Data |= (static_cast<int32>(NewSpacing) & AxisBitmask) << AxisOffset;
 	}
 
-	void SetAll(const EConnectorSpacing NewSpacing)
+	EConnectorSpacing GetSpacing(EAxis::Type Axis, bool bPositiveAxis) const
 	{
-		Data = 0;
-		const auto Value = static_cast<int32>(NewSpacing) & AxisBitmask;
-		for (auto i = 0; i < 6; ++i)
-		{
-			Data |= Value << NumBitsPerAxis * i;
-		}
-	}
-
-	EConnectorSpacing GetSpacing(const EFluAxisSigned Axis) const
-	{
-		return static_cast<EConnectorSpacing>(Data >> GetAxisOffset(Axis) & AxisBitmask);
+		return static_cast<EConnectorSpacing>(Data >> GetAxisOffset(Axis, bPositiveAxis) & AxisBitmask);
 	}
 
 	EConnectorSpacing GetVectorSpacing(const FVector& Axis) const
 	{
 		if (!FMath::IsNearlyZero(Axis.X))
 		{
-			return GetSpacing(UFluMathStatics::MakeAxisSigned(EAxis::X, Axis.X > 0.f));
+			return GetSpacing(EAxis::X, Axis.X > 0.f);
 		}
 		if (!FMath::IsNearlyZero(Axis.Y))
 		{
-			return GetSpacing(UFluMathStatics::MakeAxisSigned(EAxis::Y, Axis.Y > 0.f));
+			return GetSpacing(EAxis::Y, Axis.Y > 0.f);
 		}
 		if (!FMath::IsNearlyZero(Axis.Z))
 		{
-			return GetSpacing(UFluMathStatics::MakeAxisSigned(EAxis::Z, Axis.Z > 0.f));
+			return GetSpacing(EAxis::Z, Axis.Z > 0.f);
 		}
-
+		
 		ensure(false);
 		return EConnectorSpacing::None;
 	}
@@ -99,11 +85,9 @@ struct FScalableBrickConnectorSpacing
 	}
 
 private:
-	static int32 GetAxisOffset(const EFluAxisSigned Axis)
+	static int32 GetAxisOffset(EAxis::Type Axis, bool bPositiveAxis)
 	{
-		const auto [AxisUnsigned, bPositiveAxis] = UFluMathStatics::SplitAxisSigned(Axis);
-		const auto AxisIdx = UFluMathStatics::AxisToIndex(AxisUnsigned);
-		return AxisIdx * NumBitsPerAxisPair + (bPositiveAxis ? NumBitsPerAxis : 0);
+		return (Axis - 1) * NumBitsPerAxisPair + (bPositiveAxis ? NumBitsPerAxis : 0);
 	}
 
 	// ~Variables

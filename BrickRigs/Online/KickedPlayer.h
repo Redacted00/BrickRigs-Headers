@@ -158,7 +158,7 @@ struct FKickedPlayerList
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		return FFluSerializationStatics::NetSerializeArray<int32>(Ar, Map, bOutSuccess, Players);
+		return FSerializationHelper::NetSerializeArray<int32>(Ar, Map, bOutSuccess, Players);
 	}
 
 private:

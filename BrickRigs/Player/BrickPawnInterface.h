@@ -69,7 +69,7 @@ public:
 
 	// ~Team
 	// Implement to get all teams represented by this pawn
-	virtual void GetTeamAffiliation(TArray<FGenericTeamId>& OutTeams) const = 0;
+	virtual void GetTeamAffiliation(TSet<FGenericTeamId>& OutTeams) const = 0;
 
 protected:
 	// To be called if the team affiliation could have changed

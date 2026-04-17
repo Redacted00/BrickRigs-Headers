@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Misc/FluTimer.h"
+#include "Misc/BrickTimer.h"
 #include "MatchWinner.h"
 #include "BrickGameState.h"
 #include "Vehicle/BrickVehicle.h"
@@ -36,9 +36,9 @@ class BRICKRIGS_API ABrickGameMode : public AGameMode
 
 	// ~Variables
 	// Used to delay disabling players after the match has ended
-	FFluRealTimer Timer_UnPossessPlayers;
+	FBrickTimer Timer_UnPossessPlayers;
 	// Used to delay restarting the game
-	FFluRealTimer Timer_RestartGame;
+	FBrickTimer Timer_RestartGame;
 	// Whether the match state is being set
 	uint8 bIsSettingMatchState : 1;
 	// Set to true during the HandleMatchHasStarted function

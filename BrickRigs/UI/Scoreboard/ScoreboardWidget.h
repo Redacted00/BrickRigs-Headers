@@ -10,7 +10,7 @@
 #include "ScoreboardWidget.generated.h"
 
 class ABrickPlayerState;
-class UBrickGridPanel;
+class UGridPanel;
 class UBrickTeam;
 
 /**
@@ -36,7 +36,7 @@ class BRICKRIGS_API UScoreboardWidget : public UUserWidget
 protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* TeamsPanel;
+	UGridPanel* TeamsPanel;
 	// ~Widgets
 
 	// ~Properties

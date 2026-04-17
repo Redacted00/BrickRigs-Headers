@@ -5,7 +5,7 @@
 #include "UGC/UGCTypes.h"
 #include "Properties/BrickPropertyInterface.h"
 #include "CoreMinimal.h"
-#include "UI/Menu/Popups/PopupWidget.h"
+#include "UI/Menu/POpups/PopupWidget.h"
 #include "UGCMetaDataPopupWidget.generated.h"
 
 class UPropertiesPanelWidget;

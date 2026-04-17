@@ -32,11 +32,6 @@ public:
 		return Version == Other.Version;
 	}
 
-	bool operator!=(const FRestartTransformVersion& Other) const
-	{
-		return !(*this == Other);
-	}
-
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
 		Ar << Version;

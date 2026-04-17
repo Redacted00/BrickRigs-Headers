@@ -4,7 +4,7 @@
 
 #include "UI/UGC/UGCBrowserWidget.h"
 #include "UI/UGC/UGCMetaDataPopupWidget.h"
-#include "Misc/FluTimer.h"
+#include "Misc/BrickTimer.h"
 #include "CoreMinimal.h"
 #include "BrickEditorMode.h"
 #include "BrickEditorDefaultMode.generated.h"
@@ -20,11 +20,11 @@ class BRICKRIGS_API UBrickEditorDefaultMode : public UBrickEditorMode
 	// ~Variables
 	FPopupHandle PopupHandle_Editor;
 	// Used for periodic auto saving
-	FFluRealTimer Timer_AutoSave;
+	FBrickTimer Timer_AutoSave;
 	// Whether an auto save should be executed the next time possible
 	uint8 bAutoSavePending : 1;
-	// The last used mirror axis
-	EAxis::Type LastMirrorAxis;
+	// The last used mirror mode
+	EBrickEditorMirrorMode LastMirrorMode;
 	// List of objects that are currently highlighted
 	TArray<TWeakObjectPtr<UBrickEditorObject>> HighlightedObjects;
 	// The file pending to be loaded or save over
@@ -225,10 +225,10 @@ public:
 	// ~Visibility
 
 	// ~Mirroring
-	// Changes the current mirror axis
-	void SetMirrorAxis(const EAxis::Type NewAxis);
-	// Cycles through all possible mirror axes
-	void CycleMirrorAxis();
+	// Changes the current mirror mode
+	void SetMirrorMode(EBrickEditorMirrorMode NewMode);
+	// Cycles through all possible mirror modes
+	void CycleMirrorMode();
 	// Toggles between mirror mode on and off
 	void ToggleMirrorMode();
 	// ~Mirroring
@@ -242,5 +242,5 @@ private:
 	// Opens the UGC browser for loading, uploading etc.
 	void OpenUGCBrowser(EUGCBrowserMode Mode, bool bToggleOpen);
 	// Callback for the user settings
-	void OnMirrorAxisChanged(const EAxis::Type NewAxis);
+	void OnMirrorModeChanged(EBrickEditorMirrorMode NewMode);
 };

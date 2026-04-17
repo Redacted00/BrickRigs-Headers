@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "Misc/BrickAssetManager.h"
 #include "Misc/SmartDelegateHandle.h"
 #include "Components/FirearmComponent.h"
 #include "Vehicle/VehicleInputChannel.h"
+#include "UI/Misc/BrickUITimer.h"
 #include "HurtMarkerWidget.h"
 #include "UI/HUD/HUDIcons/HUDIconCanvasWidget.h"
 #include "PlayerWidget.generated.h"
@@ -33,13 +35,14 @@ class BRICKRIGS_API UPlayerWidget : public UHUDIconCanvasWidget
 {
 	GENERATED_BODY()
 
+private:
 	// ~Variables
 	FSmartDelegatePool DelegatePool_PC;
 	// Handles used for async loading
-	FFluAsyncAssetLoader AssetLoader_DashboardWidgetClass;
-	FFluAsyncAssetLoader AssetLoader_CameraBrickWidgetClass;
+	FSmartStreamableHandle StreamableHandle_DashboardWidgetClass;
+	FSmartStreamableHandle StreamableHandle_CameraBrickWidgetClass;
 	// Used to delay the fading out the current item widget
-	FFluUITimer Timer_FadeOutCurrentItem;
+	FBrickUITimer Timer_FadeOutCurrentItem;
 
 	// The viewed character, needed to unbind delegates later
 	UPROPERTY(Transient)
@@ -52,7 +55,7 @@ class BRICKRIGS_API UPlayerWidget : public UHUDIconCanvasWidget
 	// The seat the character is in
 	TWeakObjectPtr<USeatBrick> VehicleSeat;
 	// The current view target
-	TWeakObjectPtr<> ViewTargetSubobject;
+	TWeakObjectPtr<UObject> ViewTargetSubobject;
 
 	// The current item widget instance
 	UPROPERTY(Transient)

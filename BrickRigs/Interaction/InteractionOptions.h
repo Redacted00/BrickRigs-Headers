@@ -18,7 +18,8 @@ enum class EInteractionOptionSlot : uint8
 	Pri,
 	Sec,
 	Ter,
-	Inventory
+	Inventory,
+	Max
 };
 
 // NOTE: The delegates have to be script delegates, to support blueprints AND to have support for a == operation (which doesn't work with native delegates)

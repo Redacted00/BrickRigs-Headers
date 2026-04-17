@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "Engine/CollisionProfile.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/PointLightComponent.h"
@@ -82,16 +83,19 @@ private:
 	UClass* ComponentClass;
 
 public:
-	FName Name = NAME_None;
 	bool bDeferRegistration;
 	bool bAutoActivate;
 	bool bNetAddressable;
 
 	FBrickEditorComponentParams(const UActorComponent* Default)
 		: ComponentClass(Default->GetClass()),
-		bDeferRegistration(false),
-		bAutoActivate(Default->bAutoActivate),
-		bNetAddressable(false)
+		  bDeferRegistration(false),
+		  bAutoActivate(Default->bAutoActivate),
+#if BR_BUILD_VANILLA
+		  bNetAddressable(false)
+#else
+		  bNetAddressable(Default->IsNetAddressable())
+#endif
 	{
 	}
 
@@ -99,10 +103,14 @@ public:
 	void InitializeComponent(UActorComponent* Comp)
 	{
 		Comp->bAutoActivate = bAutoActivate;
+#if BR_BUILD_VANILLA
 		if (bNetAddressable)
 		{
 			Comp->SetNetAddressable();
 		}
+#else
+		Comp->SetNetAddressable(bNetAddressable);
+#endif
 	}
 
 	UClass* GetComponentClass() const
@@ -111,7 +119,7 @@ public:
 	}
 };
 
-struct FBrickEditorSceneComponentParams : FBrickEditorComponentParams
+struct FBrickEditorSceneComponentParams : public FBrickEditorComponentParams
 {
 	USceneComponent* AttachParent;
 	FName AttachSocketName;
@@ -127,17 +135,17 @@ struct FBrickEditorSceneComponentParams : FBrickEditorComponentParams
 
 	FBrickEditorSceneComponentParams(const USceneComponent* Default)
 		: FBrickEditorComponentParams(Default),
-		AttachParent(Default->GetAttachParent()),
-		AttachSocketName(Default->GetAttachSocketName()),
-		RelativeLocation(Default->GetRelativeLocation()),
-		RelativeRotation(Default->GetRelativeRotation()),
-		RelativeScale3D(Default->GetRelativeScale3D()),
-		Mobility(Default->Mobility),
-		bAbsoluteLocation(Default->IsUsingAbsoluteLocation()),
-		bAbsoluteRotation(Default->IsUsingAbsoluteRotation()),
-		bAbsoluteScale(Default->IsUsingAbsoluteScale()),
-		bVisible(Default->GetVisibleFlag()),
-		bUseAttachParentBound(Default->bUseAttachParentBound)
+		  AttachParent(Default->GetAttachParent()),
+		  AttachSocketName(Default->GetAttachSocketName()),
+		  RelativeLocation(Default->GetRelativeLocation()),
+		  RelativeRotation(Default->GetRelativeRotation()),
+		  RelativeScale3D(Default->GetRelativeScale3D()),
+		  Mobility(Default->Mobility),
+		  bAbsoluteLocation(Default->IsUsingAbsoluteLocation()),
+		  bAbsoluteRotation(Default->IsUsingAbsoluteRotation()),
+		  bAbsoluteScale(Default->IsUsingAbsoluteScale()),
+		  bVisible(Default->GetVisibleFlag()),
+		  bUseAttachParentBound(Default->bUseAttachParentBound)
 	{
 	}
 
@@ -166,7 +174,7 @@ struct FBrickEditorSceneComponentParams : FBrickEditorComponentParams
 	}
 };
 
-struct FBrickEditorPrimitiveComponentParams : FBrickEditorSceneComponentParams
+struct FBrickEditorPrimitiveComponentParams : public FBrickEditorSceneComponentParams
 {
 	FName CollisionProfileName;
 	ECollisionChannel CollisionObjectTypeOverride;
@@ -200,7 +208,9 @@ struct FBrickEditorPrimitiveComponentParams : FBrickEditorSceneComponentParams
 	uint8 CustomDepthStencil;
 	bool bUseAsOccluder;
 	bool CastShadow;
-	int32 TranslucencySortPriority;
+#if !BR_BUILD_VANILLA
+	FCalculateMassProperties OnCalculateMassProperties;
+#endif
 
 private:
 	TArray<float> CustomPrimitiveData;
@@ -208,34 +218,42 @@ private:
 public:
 	FBrickEditorPrimitiveComponentParams(const UPrimitiveComponent* Default)
 		: FBrickEditorSceneComponentParams(Default),
-		CollisionProfileName(Default->GetCollisionProfileName()),
-		CollisionObjectTypeOverride(ECC_MAX),
-		bSimulatePhysics(Default->BodyInstance.bSimulatePhysics),
-		MassScale(Default->BodyInstance.MassScale),
-		InertiaTensorScale(Default->BodyInstance.InertiaTensorScale),
-		bUseCCD(Default->BodyInstance.bUseCCD),
-		bContactModification(Default->BodyInstance.bContactModification),
-		bAutoWeld(Default->BodyInstance.bAutoWeld),
-		LinearDamping(Default->BodyInstance.LinearDamping),
-		AngularDamping(Default->BodyInstance.AngularDamping),
-		SleepFamily(Default->BodyInstance.SleepFamily),
-		CustomSleepThresholdMultiplier(Default->BodyInstance.CustomSleepThresholdMultiplier),
-		bGenerateWakeEvents(Default->BodyInstance.bGenerateWakeEvents),
-		PositionSolverIterationCount(Default->BodyInstance.PositionSolverIterationCount),
-		VelocitySolverIterationCount(Default->BodyInstance.VelocitySolverIterationCount),
-		PhysMaterialOverride(nullptr),
-		bNotifyRigidBodyCollision(Default->BodyInstance.bNotifyRigidBodyCollision),
-		bGenerateOverlapEvents(Default->GetGenerateOverlapEvents()),
-		bUpdateMassWhenScaleChanges(Default->BodyInstance.bUpdateMassWhenScaleChanges),
-		bCanEverAffectNavigation(Default->CanEverAffectNavigation()),
-		bReplicatePhysicsToAutonomousProxy(Default->bReplicatePhysicsToAutonomousProxy),
-		MaxDrawDist(Default->LDMaxDrawDistance),
-		DetailMode(Default->DetailMode),
-		bRenderCustomDepth(Default->bRenderCustomDepth),
-		CustomDepthStencil(Default->CustomDepthStencilValue),
-		bUseAsOccluder(Default->bUseAsOccluder),
-		CastShadow(Default->CastShadow),
-		TranslucencySortPriority(Default->TranslucencySortPriority)
+		  CollisionProfileName(Default->GetCollisionProfileName()),
+		  CollisionObjectTypeOverride(ECC_MAX),
+#if !BR_BUILD_VANILLA
+		  CollisionTraceFlag(Default->BodyInstance.CollisionTraceFlag),
+		  BodySetupScale3D(Default->BodyInstance.BodySetupScale3D),
+		  CollisionDominanceGroup(Default->BodyInstance.CollisionDominanceGroup),
+#endif
+		  bSimulatePhysics(Default->BodyInstance.bSimulatePhysics),
+		  MassScale(Default->BodyInstance.MassScale),
+		  InertiaTensorScale(Default->BodyInstance.InertiaTensorScale),
+		  bUseCCD(Default->BodyInstance.bUseCCD),
+		  bContactModification(Default->BodyInstance.bContactModification),
+		  bAutoWeld(Default->BodyInstance.bAutoWeld),
+		  LinearDamping(Default->BodyInstance.LinearDamping),
+		  AngularDamping(Default->BodyInstance.AngularDamping),
+		  SleepFamily(Default->BodyInstance.SleepFamily),
+		  CustomSleepThresholdMultiplier(Default->BodyInstance.CustomSleepThresholdMultiplier),
+		  bGenerateWakeEvents(Default->BodyInstance.bGenerateWakeEvents),
+		  PositionSolverIterationCount(Default->BodyInstance.PositionSolverIterationCount),
+		  VelocitySolverIterationCount(Default->BodyInstance.VelocitySolverIterationCount),
+#if BR_BUILD_VANILLA
+		  PhysMaterialOverride(nullptr),
+#else
+		  PhysMaterialOverride(Default->BodyInstance.PhysMaterialOverride),
+#endif
+		  bNotifyRigidBodyCollision(Default->BodyInstance.bNotifyRigidBodyCollision),
+		  bGenerateOverlapEvents(Default->GetGenerateOverlapEvents()),
+		  bUpdateMassWhenScaleChanges(Default->BodyInstance.bUpdateMassWhenScaleChanges),
+		  bCanEverAffectNavigation(Default->CanEverAffectNavigation()),
+		  bReplicatePhysicsToAutonomousProxy(Default->bReplicatePhysicsToAutonomousProxy),
+		  MaxDrawDist(Default->LDMaxDrawDistance),
+		  DetailMode(Default->DetailMode),
+		  bRenderCustomDepth(Default->bRenderCustomDepth),
+		  CustomDepthStencil(Default->CustomDepthStencilValue),
+		  bUseAsOccluder(Default->bUseAsOccluder),
+		  CastShadow(Default->CastShadow)
 	{
 	}
 
@@ -250,12 +268,21 @@ public:
 		}
 		if (CollisionObjectTypeOverride != ECC_MAX)
 		{
+#if BR_BUILD_VANILLA
 			Comp->BodyInstance.SetObjectType(CollisionObjectTypeOverride);
+#else
+			Comp->BodyInstance.SetObjectType(CollisionObjectTypeOverride, false);
+#endif
 		}
 		for (const auto& Pair : CollisionResponseOverrides)
 		{
 			Comp->BodyInstance.SetResponseToChannel(Pair.Key, Pair.Value);
 		}
+#if !BR_BUILD_VANILLA
+		Comp->BodyInstance.CollisionTraceFlag = CollisionTraceFlag;
+		Comp->BodyInstance.BodySetupScale3D = BodySetupScale3D;
+		Comp->BodyInstance.CollisionDominanceGroup = CollisionDominanceGroup;
+#endif
 		Comp->BodyInstance.bSimulatePhysics = bSimulatePhysics;
 		Comp->BodyInstance.MassScale = MassScale;
 		Comp->BodyInstance.InertiaTensorScale = InertiaTensorScale;
@@ -273,7 +300,11 @@ public:
 		Comp->OnComponentSleep.Clear();
 		Comp->BodyInstance.LinearDamping = LinearDamping;
 		Comp->BodyInstance.AngularDamping = AngularDamping;
+#if BR_BUILD_VANILLA
 		Comp->BodyInstance.SetPhysMaterialOverride(PhysMaterialOverride);
+#else
+		Comp->BodyInstance.PhysMaterialOverride = PhysMaterialOverride;
+#endif
 		Comp->SetGenerateOverlapEvents(bGenerateOverlapEvents);
 		Comp->BodyInstance.bUpdateMassWhenScaleChanges = bUpdateMassWhenScaleChanges;
 		Comp->SetCanEverAffectNavigation(bCanEverAffectNavigation);
@@ -284,10 +315,23 @@ public:
 		Comp->CustomDepthStencilValue = CustomDepthStencil;
 		Comp->bUseAsOccluder = bUseAsOccluder;
 		Comp->CastShadow = CastShadow;
-		Comp->TranslucencySortPriority = TranslucencySortPriority;
 
+#if BR_BUILD_VANILLA
 		const_cast<FCustomPrimitiveData&>(Comp->GetCustomPrimitiveData()).Data = CustomPrimitiveData;
+#else
+		Comp->ResetCustomPrimitiveData();
+		if (CustomPrimitiveData.Num())
+		{
+			Comp->SetCustomPrimitiveDataVector(0, CustomPrimitiveData);
+		}
+#endif
 
+#if !BR_BUILD_VANILLA
+		if (OnCalculateMassProperties.IsBound())
+		{
+			Comp->BodyInstance.GetOnCalculateMassProperties() = OnCalculateMassProperties;
+		}
+#endif
 	}
 
 	void InitCustomPrimitiveData(int32 MaxData)
@@ -315,31 +359,31 @@ public:
 	// Float version
 	void SetCustomPrimitiveDataFloat(int32 DataIndex, float Data)
 	{
-		SetCustomPrimitiveData(DataIndex, { Data });
+		SetCustomPrimitiveData(DataIndex, {Data});
 	}
 
 	// Vector 2D version
 	void SetCustomPrimitiveDataVector2(int32 DataIndex, const FVector2D& Data)
 	{
-		SetCustomPrimitiveData(DataIndex, { Data.X, Data.Y });
+		SetCustomPrimitiveData(DataIndex, {Data.X, Data.Y});
 	}
 
 	// Vector version
 	void SetCustomPrimitiveDataVector3(int32 DataIndex, const FVector& Data)
 	{
-		SetCustomPrimitiveData(DataIndex, { Data.X, Data.Y, Data.Z });
+		SetCustomPrimitiveData(DataIndex, {Data.X, Data.Y, Data.Z});
 	}
 
 	// Vector 4D version
 	void SetCustomPrimitiveDataVector4(int32 DataIndex, const FVector4& Data)
 	{
-		SetCustomPrimitiveData(DataIndex, { Data.X, Data.Y, Data.Z, Data.W });
+		SetCustomPrimitiveData(DataIndex, {Data.X, Data.Y, Data.Z, Data.W});
 	}
 
 	// Color version
 	void SetCustomPrimitiveDataColor(int32 DataIndex, const FLinearColor& Data)
 	{
-		SetCustomPrimitiveData(DataIndex, { Data.R, Data.G, Data.B, Data.A });
+		SetCustomPrimitiveData(DataIndex, {Data.R, Data.G, Data.B, Data.A});
 	}
 };
 
@@ -378,7 +422,7 @@ struct FBrickEditorSplineMeshComponentParams : public FBrickEditorMeshComponentP
 
 	FBrickEditorSplineMeshComponentParams(const USplineMeshComponent* Default = GetDefault<USplineMeshComponent>())
 		: FBrickEditorMeshComponentParams(Default)
-		, StaticMesh(Default->GetStaticMesh())
+		  , StaticMesh(Default->GetStaticMesh())
 	{
 	}
 
@@ -402,13 +446,13 @@ struct FBrickEditorLightComponentParams : public FBrickEditorSceneComponentParam
 
 	FBrickEditorLightComponentParams(const ULightComponent* Default)
 		: FBrickEditorSceneComponentParams(Default),
-		bCastShadows(Default->CastShadows),
-		MaxDrawDistance(Default->MaxDrawDistance),
-		MaxDistanceFadeRange(Default->MaxDistanceFadeRange),
-		SpecularScale(Default->SpecularScale),
-		Intensity(Default->Intensity),
-		LightColor(Default->LightColor),
-		LightFunctionMaterial(Default->LightFunctionMaterial)
+		  bCastShadows(Default->CastShadows),
+		  MaxDrawDistance(Default->MaxDrawDistance),
+		  MaxDistanceFadeRange(Default->MaxDistanceFadeRange),
+		  SpecularScale(Default->SpecularScale),
+		  Intensity(Default->Intensity),
+		  LightColor(Default->LightColor),
+		  LightFunctionMaterial(Default->LightFunctionMaterial)
 	{
 	}
 
@@ -432,7 +476,7 @@ struct FBrickEditorLocalLightComponentParams : public FBrickEditorLightComponent
 
 	FBrickEditorLocalLightComponentParams(const ULocalLightComponent* Default = GetDefault<UPointLightComponent>())
 		: FBrickEditorLightComponentParams(Default),
-		AttenuationRadius(Default->AttenuationRadius)
+		  AttenuationRadius(Default->AttenuationRadius)
 	{
 	}
 
@@ -451,7 +495,7 @@ struct FBrickEditorPointLightComponentParams : public FBrickEditorLocalLightComp
 
 	FBrickEditorPointLightComponentParams(const UPointLightComponent* Default = GetDefault<UPointLightComponent>())
 		: FBrickEditorLocalLightComponentParams(Default),
-		LightFalloffExponent(Default->LightFalloffExponent), bUseInverseSquaredFalloff(Default->bUseInverseSquaredFalloff)
+		  LightFalloffExponent(Default->LightFalloffExponent), bUseInverseSquaredFalloff(Default->bUseInverseSquaredFalloff)
 	{
 	}
 
@@ -471,8 +515,8 @@ struct FBrickEditorSpotLightComponentParams : public FBrickEditorPointLightCompo
 
 	FBrickEditorSpotLightComponentParams(const USpotLightComponent* Default = GetDefault<USpotLightComponent>())
 		: FBrickEditorPointLightComponentParams(Default),
-		InnerConeAngle(Default->InnerConeAngle),
-		OuterConeAngle(Default->OuterConeAngle)
+		  InnerConeAngle(Default->InnerConeAngle),
+		  OuterConeAngle(Default->OuterConeAngle)
 	{
 	}
 

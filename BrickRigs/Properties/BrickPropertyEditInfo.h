@@ -283,7 +283,7 @@ bool FBrickPropertyEditInfo::SetPropertyValueInternal(ABasePlayerController* PC,
 	}
 	else
 	{
-		// Overwrite the event type
+		// Overrite the event type
 		PendingChangedEvent->SetEventType(EventType);
 	}
 

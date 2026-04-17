@@ -5,7 +5,6 @@
 #include "Misc/BrickAssetManager.h"
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "FireExtinguisherComponent.generated.h"
 
 USTRUCT(BlueprintType)
@@ -38,8 +37,8 @@ class BRICKRIGS_API UFireExtinguisherComponent : public UActorComponent
 	DECLARE_DELEGATE_TwoParams(FGetNozzleAttachment, USceneComponent*&, FName&);
 
 	// ~Variables
-	FFluAsyncAssetLoader AssetLoader_Emitter;
-	FFluAsyncAssetLoader AssetLoader_Sound;
+	FSmartStreamableHandle StreamableHandle_Emitter;
+	FSmartStreamableHandle StreamableHandle_Sound;
 	FFireExtinguisherProperties ExtinguisherProperties;
 	UPROPERTY(Transient)
 	UParticleSystemComponent* ParticleComp;

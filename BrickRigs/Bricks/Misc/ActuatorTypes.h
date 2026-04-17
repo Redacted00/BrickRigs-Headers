@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Serialization/FluSerializationStatics.h"
+#include "Serialization/SerializationHelper.h"
 #include "ActuatorTypes.generated.h"
 
 class UActuatorBrick;
@@ -91,8 +91,8 @@ public:
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		FFluSerializationStatics::SerializeFloatCompressed<uint16>(Ar, Actuation, -1.f, 1.f);
-		FFluSerializationStatics::SerializeFloatCompressed<uint16>(Ar, Input, -1.f, 1.f);
+		FSerializationHelper::SerializeFloatCompressed(Ar, Actuation, -1.f, 1.f, 16);
+		FSerializationHelper::SerializeFloatCompressed(Ar, Input, -1.f, 1.f, 16);
 		Ar << OwnerTimestamp;
 		return !Ar.IsError();
 	}

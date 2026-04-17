@@ -135,8 +135,8 @@ private:
 	// All currently used editor objects
 	UPROPERTY(Transient)
 	TArray<UBrickEditorObject*> BrickEditorObjects;
-	// Pool used for creating and reusing sub objects
-	TUniquePtr<FBrickEditorObjectPool> ObjectPool;
+	// The pool used for creating and reusing sub objects
+	TSharedRef<FBrickEditorObjectPool> ObjectPool;
 	// Download task handle
 	FFluUGCAsyncTaskHandle UGCTask_Download;
 	// Current download progress
@@ -155,8 +155,10 @@ public:
 	FOnValidateUGCHeader OnValidateUGCHeaderDelegate;
 	// ~Delegates
 
+	// ~Constructor
+	UBrickEditorInterfaceComponent();
+
 	// ~Super Interface
-	virtual void OnRegister() override;
 	virtual void OnUnregister() override;
 	// ~Super Interface
 
@@ -187,9 +189,9 @@ public:
 	}
 
 	// Public accessor to the object pool
-	FBrickEditorObjectPool* GetObjectPool() const
+	const auto& GetObjectPool() const
 	{
-		return ObjectPool.Get();
+		return ObjectPool;
 	}
 
 	// Get the type of mod associated with the interface
@@ -229,10 +231,10 @@ private:
 	}
 
 	// Loads objects contained in the archive
-	EBrickEditorLoadResult LoadObjectsFromArchive(TArray<UBrickEditorObject*>& OutObjects, FArchive& Ar, const FBrickEditorSaveHeader& Header, EBrickEditorObjectCreationContext CreationContext, EAxis::Type MirrorAxis);
+	EBrickEditorLoadResult LoadObjectsFromArchive(TArray<UBrickEditorObject*>& OutObjects, FArchive& Ar, const FBrickEditorSaveHeader& Header, EBrickEditorObjectCreationContext CreationContext, EBrickEditorMirrorMode MirrorMode);
 	// Internal version used to optimize the legacy and non legacy file paths
 	template <bool bIsLegacyFile>
-	EBrickEditorLoadResult LoadObjectsFromArchiveInternal(TArray<UBrickEditorObject*>& OutObjects, FArchive& Ar, const FBrickEditorSaveHeader& Header, EBrickEditorObjectCreationContext CreationContext, EAxis::Type MirrorAxis);
+	EBrickEditorLoadResult LoadObjectsFromArchiveInternal(TArray<UBrickEditorObject*>& OutObjects, FArchive& Ar, const FBrickEditorSaveHeader& Header, EBrickEditorObjectCreationContext CreationContext, EBrickEditorMirrorMode MirrorMode);
 
 public:
 	// Loads the header only for a given save file
@@ -281,18 +283,8 @@ public:
 		return GetNumBrickEditorObjectsByPredicate<B, C>(true);
 	}
 
-	// Version that uses a class pointer
-	template <class B = UBrickEditorObject>
-	int32 GetNumBrickEditorObjectsByClass(const UClass* InClass) const
-	{
-		return GetNumBrickEditorObjectsByPredicate<B, B>([&](const auto* Object)
-		{
-			return Object->IsA(InClass);
-		});
-	}
-
 	// Get the number of objects that are of the given static info class
-	int32 GetNumBrickEditorObjectsByStaticInfoClass(const UClass* InClass) const
+	int32 GetNumBrickEditorObjectsByStaticInfoClass(UClass* InClass) const
 	{
 		auto OutNum = 0;
 		ForEachBrickEditorObject<UBrickEditorObject, UBrickEditorObject>([&](auto* Object)
@@ -382,7 +374,7 @@ public:
 	}
 
 	// Searches for the mirrored object in the given array (object itself may be in it as well)
-	UBrickEditorObject* GetMirroredBrickEditorObject(const UBrickEditorObject* Object, const EAxis::Type MirrorAxis, const TArray<UBrickEditorObject*>& Objects) const;
+	UBrickEditorObject* GetMirroredBrickEditorObject(const UBrickEditorObject* Object, const EBrickEditorMirrorMode MirrorMode, const TArray<UBrickEditorObject*>& Objects) const;
 	// ~Get Object
 
 	// ~Get Objects
@@ -423,22 +415,22 @@ public:
 	template <class B = UBrickEditorObject, class C>
 	void GetBrickEditorObjectsByClass(TArray<C*>& OutObjects) const
 	{
-		GetBrickEditorObjectsByPredicate<B, C>(OutObjects, [](auto*) { return true; });
+		GetBrickEditorObjectsByPredicate<B, C>(OutObjects, [](auto* Object) { return true; });
 	}
 
 	// Version that uses a class pointer instead of a template argument
 	template <class B = UBrickEditorObject>
-	void GetBrickEditorObjectsByClass(const UClass* InClass, TArray<B*>& OutObjects) const
+	void GetBrickEditorObjectsByClass(UClass* InClass, TArray<B*>& OutObjects) const
 	{
 		GetBrickEditorObjectsByPredicate<B, B>(OutObjects, [&](auto* Object)
 		{
-			return Object->IsA(InClass);
+			return Object->GetClass() == InClass;
 		});
 	}
 
 	// Find all objects with the same static info class
 	template <class B = UBrickEditorObject>
-	void GetBrickEditorObjectsByStaticInfoClass(const UClass* InClass, TArray<UBrickEditorObject*>& OutObjects) const
+	void GetBrickEditorObjectsByStaticInfoClass(UClass* InClass, TArray<UBrickEditorObject*>& OutObjects) const
 	{
 		GetBrickEditorObjectsByPredicate<B, B>(OutObjects, [&](auto* Object)
 		{
@@ -527,26 +519,21 @@ public:
 
 	// Allows iterating objects in a specific range
 	template <class B = UBrickEditorObject, class C = UBrickEditorObject>
-	void ForEachBrickEditorObjectInRange(int32 StartIdx, int32 EndIdx, const TFunction<bool(C*, int32)>& Func) const
+	void ForEachBrickEditorObjectInRange(int32 StartIdx, int32 EndIdx, const TFunction<void(C*, int32)>& Func) const
 	{
 		for (auto i = StartIdx; i <= EndIdx; ++i)
 		{
 			auto* Object = BrickEditorObjects[i];
 			if (std::is_same_v<B, C>)
 			{
-				if (!Func(CastChecked<C>(Object), i))
-				{
-					break;
-				}
+				Func(CastChecked<C>(Object), i);
 			}
 			else
 			{
-				if (auto* Casted = Cast<C>(Object))
+				auto* Casted = Cast<C>(Object);
+				if (Casted)
 				{
-					if (!Func(Casted, i))
-					{
-						break;
-					}
+					Func(Casted, i);
 				}
 			}
 		}
@@ -562,11 +549,11 @@ public:
 	virtual bool CanCreateBrickEditorObject(UClass* InStaticInfoClass) const;
 	// Can be used to place a single object, optionally also a mirrored counterpart
 	// NOTE: This should not be used when multiple objects are added/duplicated for performance reasons
-	UBrickEditorObject* CreateSingleBrickEditorObject(UClass* InStaticInfoClass, const FVector& InLocation, const FRotator& InRotation, EAxis::Type MirrorAxis = EAxis::None);
+	UBrickEditorObject* CreateSingleBrickEditorObject(UClass* InStaticInfoClass, const FVector& InLocation, const FRotator& InRotation, EBrickEditorMirrorMode MirrorMode = EBrickEditorMirrorMode::None);
 
 private:
 	// Creates a new editor object, optionally also a mirrored counterpart
-	UBrickEditorObject* CreateBrickEditorObject(UClass* InStaticInfoClass, EAxis::Type MirrorAxis, const FBrickRigsSaveVersion& Version, const FLegacyBrickEditorObjectClassID& LegacyClassId);
+	UBrickEditorObject* CreateBrickEditorObject(UClass* InStaticInfoClass, EBrickEditorMirrorMode MirrorMode, const FBrickRigsSaveVersion& Version, const FLegacyBrickEditorObjectClassID& LegacyClassId);
 	// To be called BEFORE creating any objects
 	void PreCreateBrickEditorObjects(int32 NumObjects);
 	// Called after new objects have been created
@@ -578,7 +565,7 @@ private:
 
 public:
 	// Creates a duplicate of all provided objects, optionally mirroring them along an arbitrary axis
-	void DuplicateBrickEditorObjects(const TArray<UBrickEditorObject*>& ObjectsToDuplicate, TArray<UBrickEditorObject*>& OutNewObjects, EAxis::Type MirrorAxis = EAxis::None, bool bDestroyOriginalObjects = false);
+	void DuplicateBrickEditorObjects(const TArray<UBrickEditorObject*>& ObjectsToDuplicate, TArray<UBrickEditorObject*>& OutNewObjects, EBrickEditorMirrorMode MirrorMode = EBrickEditorMirrorMode::None, bool bDestroyOriginalObjects = false);
 	// Destroy an array of editable objects, we use an array instead of a single object so implementations can make array removals and resizes more efficient
 	bool DestroyBrickEditorObjects(const TArray<UBrickEditorObject*>& InObjects, bool bCallPostDestroy = true);
 
@@ -603,15 +590,6 @@ public:
 	virtual void PostInitializeBrickEditorObjects()
 	{
 	}
-
-	// Rearranges the order of an object within its class
-	bool ReorderBrickEditorObject(UBrickEditorObject* Object, const UClass* ObjectClass, const int32 NewOrder);
-
-	// Returns the index of an object among objects of its class
-	int32 GetBrickEditorObjectOrder(const UBrickEditorObject* Object, const UClass* ObjectClass) const;
-
-	// Reorders the given objects to the given indices
-	void ReorderBrickEditorObjects(const TArray<int32>& Indices, const TArray<UBrickEditorObject*>& Objects);
 
 	// Tries to find the best position for a camera to encapsulate all given objects
 	TOptional<FVector> FocusCameraOnBrickEditorObjects(const TArray<UBrickEditorObject*>& Objects, const FTransform& CameraTransform, const FVector2D& FOV, float Margin) const;

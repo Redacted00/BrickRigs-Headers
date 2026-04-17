@@ -6,8 +6,6 @@
 #include "ScalableBrick.h"
 #include "ExhaustBrick.generated.h"
 
-class UExhaustEffect;
-
 UCLASS(Abstract)
 class BRICKRIGS_API UExhaustBrickStaticInfo : public UScalableBrickStaticInfo
 {
@@ -16,7 +14,9 @@ class BRICKRIGS_API UExhaustBrickStaticInfo : public UScalableBrickStaticInfo
 public:
 	// ~Properties
 	UPROPERTY(EditDefaultsOnly, Category = Exhaust)
-	UExhaustEffect* DefaultExhaustEffect;
+	UParticleSystem* SmokeEmitter;
+	UPROPERTY(EditDefaultsOnly, Category = Exhaust)
+	UParticleSystem* BackFireEmitter;
 	// ~Properties
 
 	// ~Constructor
@@ -55,9 +55,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Exhaust)
 	float SpawnScale;
 	UPROPERTY(EditAnywhere, Category = Exhaust)
-	FColor SmokeColor;
-	UPROPERTY(EditDefaultsOnly, Category = Exhaust)
-	UExhaustEffect* ExhaustEffect;
+	FBrickColor SmokeColor;
 	// ~Brick Properties
 
 public:
@@ -65,11 +63,8 @@ public:
 	UExhaustBrick();
 
 	// ~Super Interface
-	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
-	virtual void PostConstructVehicle() override;
-	virtual void RepairBrick() override;
 	virtual void OnBricksAddedOrRemovedFromCluster() override;
 
 	virtual bool HasAnyInputChannel() const override
@@ -85,7 +80,7 @@ public:
 	// ~Super Interface
 
 private:
-	// Return whether this exhaust is updated from the motor throttle
+	// Return whether this exahust is updated from the motor throttle
 	bool IsDrivenByMotor() const;
 	// Updates the controlling motors
 	void UpdateMotors(bool bIsUninitializing = false);

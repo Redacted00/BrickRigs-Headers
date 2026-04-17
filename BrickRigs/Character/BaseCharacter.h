@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Misc/BrickAssetManager.h"
 #include "Player/PlayerViewPoint.h"
 #include "CharacterDamageInfo.h"
 #include "Components/CharacterInventoryComponent.h"
@@ -53,7 +54,7 @@ protected:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnRestrictedAreaChanged, bool);
 
 	// ~Variables
-	FFluAsyncAssetLoader Loader_BadgeTexture;
+	FSmartStreamableHandle StreamableHandle_BadgeTexture;
 	// Used to block aiming and firing while the animation is still blending out from sprinting
 	FTimerHandle TimerHandle_SprintTransition;
 	// Timer to forcefully cache the ragdoll pose after a certain time
@@ -88,27 +89,11 @@ protected:
 	// ~Character
 
 	// ~Damage
-	// Current health in the range of 0-1
-	float Health = 1.f;
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_RepHealth)
-	uint8 RepHealth = MAX_uint8;
+	// The replicated character health
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_CharacterHealth)
+	FCharacterHealth CharacterHealth;
 	UFUNCTION()
-	void OnRep_RepHealth();
-	/**
-	* Indicates if the character is conscious, unconscious or dead., independent of health.
-	* Since the health is compressed we can't rely on it being accurate.
-	 */
-	UPROPERTY(Transient, ReplicatedUsing = OnStateOfHealthChanged)
-	ECharacterStateOfHealth StateOfHealth = ECharacterStateOfHealth::Conscious;
-	// Indicates if and how the character is healing
-	UPROPERTY(Transient, ReplicatedUsing = OnHealingStateChanged)
-	ECharacterHealingState HealingState = ECharacterHealingState::NotHealing;
-	// Last bone that was hit before death
-	UPROPERTY(Transient, Replicated)
-	FName LastHitBone;
-	// Damage impulse vector applied to the bone that was last hit
-	UPROPERTY(Transient, Replicated)
-	FVector_NetQuantize100 LastDamageImpulse = FVector::ZeroVector;
+	void OnRep_CharacterHealth(const FCharacterHealth& OldHealth);
 	// Last time damage has been taken
 	float LastDamageTime;
 	// Last time a collision sound has been played
@@ -127,8 +112,10 @@ protected:
 
 	// ~Fire
 	// Whether the character is currently on fire
-	UPROPERTY(Transient, ReplicatedUsing = OnIsOnFireChanged)
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_IsOnFire)
 	bool bIsOnFire;
+	UFUNCTION()
+	void OnRep_IsOnFire();
 	// The total time the character has been on fire
 	float TimeOnFire;
 	// The pawn that has set the character on fire
@@ -365,7 +352,14 @@ public:
 
 	// ~View
 	// Convert our compressed view rotation to an actual rotation
-	FRotator GetRemoteViewRotation() const;
+	FRotator GetRemoteViewRotation() const
+	{
+		FRotator OutRotation;
+		OutRotation.Pitch = RemoteViewPitch / 255.f * 180.f - 90.f;
+		OutRotation.Yaw = RemoteViewYaw / 255.f * 360.f;
+		OutRotation.Roll = 0.f;
+		return OutRotation;
+	}
 
 	// Return the maximum allowed pitch rotation delta between the body and the view (head)
 	FFloatInterval GetViewPitchRange() const;
@@ -452,19 +446,19 @@ public:
 	// Get the current health, 0-1
 	auto GetHealth() const
 	{
-		return Health;
+		return CharacterHealth.GetHealth();
 	}
 
 	// Get the current state of health
 	auto GetStateOfHealth() const
 	{
-		return StateOfHealth;
+		return CharacterHealth.GetStateOfHealth();
 	}
 
 	// Get the current healing state
 	auto GetHealingState() const
 	{
-		return HealingState;
+		return CharacterHealth.GetHealingState();
 	}
 
 	// Return true if this character is dead
@@ -505,19 +499,16 @@ protected:
 	// Called when the character has received point or radial damage
 	void TakePointOrRadialDamage(float DamageAmount, const FDamageEvent& DamageEvent, const FName& BoneName, const FVector& HitLocation, const FVector& ImpulseDirection, float Scale, AController* EventInstigator);
 	// Set the current health, server only
-	void SetHealth(const float NewHealth);
+	void SetHealth(float NewHealth);
 	// Called when the 'life' percentage changes
-	UFUNCTION()
-	virtual void OnHealthChanged();
+	virtual void OnHealthChanged(float OldHealth);
 	// Sets the state of health, server only
 	void SetStateOfHealth(ECharacterStateOfHealth NewState);
 	// Called when the state of health has changed, server and clients
-	UFUNCTION()
 	virtual void OnStateOfHealthChanged();
 	// Sets the curret healing state, server only
 	void SetHealingState(ECharacterHealingState NewState);
 	// Called whenever the healing state has changed
-	UFUNCTION()
 	virtual void OnHealingStateChanged();
 	// Checks the point damage factor array on the static info for partly increased or decreased damage
 	float GetPointDamageScale(const FHitResult& Hit) const;
@@ -537,7 +528,6 @@ protected:
 	// Sets the on fire flag, server only
 	bool SetIsOnFire(bool bNewOnFire, APawn* DamageInstigator = nullptr);
 	// Called whenever the fire flag has changed
-	UFUNCTION()
 	void OnIsOnFireChanged();
 	// ~Health
 
@@ -931,7 +921,7 @@ private:
 public:
 	// ~IBrickPawnInterface
 	virtual void OnOwningPlayerStateChanged(ABrickPlayerState* OldPlayerState) override;
-	virtual void GetTeamAffiliation(TArray<FGenericTeamId>& OutTeams) const override;
+	virtual void GetTeamAffiliation(TSet<FGenericTeamId>& OutTeams) const override;
 	virtual void GetPawnBounds(FVector& OutBoundsMin, FVector& OutBoundsMax) const override;
 	virtual FTransform GetPawnRestartTransform() const override;
 	virtual void OverridePawnFreeCamPlacement(const FHitResult& Hit, FVector& OutLocation, FRotator& OutRotation) const override;

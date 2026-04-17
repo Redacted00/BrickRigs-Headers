@@ -28,7 +28,7 @@ protected:
 	FPopupHandle PopupHandle_KickPlayer;
 
 	// Used to delay updating the kicked player list
-	FFluRealTimer Timer_RequestKickedPlayerList;
+	FBrickTimer Timer_RequestKickedPlayerList;
 	// Pending kicked player list request
 	FKickedPlayerListRequest KickedPlayerListRequest;
 	// Most recent request id

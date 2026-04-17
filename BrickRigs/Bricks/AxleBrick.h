@@ -7,11 +7,8 @@
 
 class UBrickEditorArrowComponent;
 
-USTRUCT()
 struct FAxleBrickEditorParams : public FBrickEditorParams
 {
-	GENERATED_BODY()
-
 	// Arrow components used to visualize the steering angle and drive direction
 	TArray<TBrickEditorComponentPtr<UBrickEditorArrowComponent>> ArrowComponents;
 };
@@ -95,7 +92,7 @@ public:
 	UAxleBrick(const FObjectInitializer& ObjectInitializer);
 
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UpdateEditorVisualization() override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;
@@ -110,12 +107,12 @@ public:
 	virtual UBrickConnection* CreateCustomBrickConnection(UBrick* OtherBrick, const FName& ConnectionName, FBrickConnectionParams& Params) const override;
 	virtual void OnBrickConnectionActivated(UBrickConnection* InConnection) override;
 	virtual void OnBrickConnectionBroke(UBrickConnection* InConnection) override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
+	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FAxleBrickEditorParams>();
+		return MakeUnique<FAxleBrickEditorParams>();
 	}
 
 	// ~Super Interface

@@ -8,13 +8,13 @@
 
 class UBrickEditorObject;
 class UBrickEditorInterfaceComponent;
+class UBrickColor;
 class UTexture2D;
 class UPropertyWidget;
 class ABasePlayerController;
 class ABrickEditor;
 class IBrickPropertyInterface;
 struct FBrickProperty;
-struct FBrickPropertyInstance;
 struct FBrickPropertyReflection;
 struct FBrickEditorReferenceResolver;
 
@@ -142,11 +142,6 @@ private:
 
 public:
 	// ~Constructor
-	TBrickPropAttribute()
-	{
-	}
-
-	// ~Constructor
 	TBrickPropAttribute(const T& InValue)
 		: Value(InValue)
 	{
@@ -156,13 +151,6 @@ public:
 	TBrickPropAttribute(const FGetter& InDelegate)
 		: Delegate(InDelegate)
 	{
-	}
-
-	// ~Constructor
-	template <typename FuncType, typename = std::enable_if_t<std::is_invocable_v<FuncType, const FBrickPropertyContainer&>>>
-	TBrickPropAttribute(FuncType&& InFunction)
-	{
-		Delegate.BindLambda(Forward<FuncType>(InFunction));
 	}
 
 	// Outputs the bound value if one has been assigned
@@ -459,26 +447,26 @@ public:
 	DECLARE_BRICK_PROP_TYPE_CUSTOM(PropertyType, const ValueType* InValue)
 
 	// Macro that should be called when a property has been modified externally
-#define OnPropertyModifiedExternally(Object, Property, bUpdateAllProperties) OnPropertyModified(FBrickPropertyChangedEvent(GET_MEMBER_NAME_CHECKED(ThisClass, Property), Object, bUpdateAllProperties))
+#define OnPropertyModifiedExternally(Object, Property) OnPropertyModified(FBrickPropertyChangedEvent(GET_MEMBER_NAME_CHECKED(ThisClass, Property), Object))
 	// To be called when an external property has been modified externally, for example when the screen resolution has been reverted
-#define OnExternalPropertyModifiedExternally(Object, PropertyType, bUpdateAllProperties) OnPropertyModified(FBrickPropertyChangedEvent(#PropertyType, Object, bUpdateAllProperties))
+#define OnExternalPropertyModifiedExternally(Object, PropertyType) OnPropertyModified(FBrickPropertyChangedEvent(#PropertyType, Object))
 	// Called when a property has been modified through the property interface or externally
 	static void OnPropertyModified(const FBrickPropertyChangedEvent& InEvent);
 
 	// Useful to set brick property values from an external source
-#define SetPropertyValueExternal(Container, Property, NewValue, bUpdateAllProperties) SetPropertyValueExternalInternal(Container, GET_MEMBER_NAME_CHECKED(ThisClass, Property), Property, NewValue, bUpdateAllProperties)
+#define SetPropertyValueExternal(Container, Property, NewValue) SetPropertyValueExternalInternal(Container, GET_MEMBER_NAME_CHECKED(ThisClass, Property), Property, NewValue)
 	// Internal version that takes the property name
 	template <typename ValueType>
-	static bool SetPropertyValueExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, ValueType& Value, const ValueType& NewValue, const bool bUpdateAllProperties);
+	static bool SetPropertyValueExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, ValueType& Value, const ValueType& NewValue);
 };
 
 template <typename ValueType>
-bool FBrickProperty::SetPropertyValueExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, ValueType& Value, const ValueType& NewValue, const bool bUpdateAllProperties)
+bool FBrickProperty::SetPropertyValueExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, ValueType& Value, const ValueType& NewValue)
 {
 	if (NewValue != Value)
 	{
 		Value = NewValue;
-		OnPropertyModified(FBrickPropertyChangedEvent(PropertyName, Container.GetRootObject(), bUpdateAllProperties));
+		OnPropertyModified(FBrickPropertyChangedEvent(PropertyName, Container.GetRootObject()));
 		return true;
 	}
 	return false;

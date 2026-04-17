@@ -99,10 +99,10 @@ struct FEnumBrickPropertyBase : FBrickProperty
 	}
 
 	// Useful to cycle an enum property value, for example in the context menu
-#define CycleEnumPropertyExternal(Object, Property, Getter, bUpdateAllProperties) CycleEnumPropertyExternalInternal(Object, GET_MEMBER_NAME_CHECKED(ThisClass, Property), Property, Getter, bUpdateAllProperties)
+#define CycleEnumPropertyExternal(Object, Property, Getter) CycleEnumPropertyExternalInternal(Object, GET_MEMBER_NAME_CHECKED(ThisClass, Property), Property, Getter)
 	// Internal version with a longer syntax
 	template <typename EnumType>
-	static bool CycleEnumPropertyExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, EnumType& Value, const FGetEnumItems& GetItemsDelegate, const bool bUpdateAllProperties = false);
+	static bool CycleEnumPropertyExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, EnumType& Value, const FGetEnumItems& GetItemsDelegate);
 	// Selects the first valid enum item
 	template <typename EnumType>
 	static bool ValidateEnumProperty(const FBrickPropertyContainer& Container, EnumType& Value, const FGetEnumItems& GetItemsDelegate, const FIsEnumValueSupported<EnumType>& IsValueSupportedDelegate, EnumType* FallbackValue = nullptr);
@@ -172,13 +172,13 @@ template <typename EnumType, typename... ParamTypes>
 DECLARE_BRICK_PROP_TYPE_CUSTOM(FEnumBrickProperty<EnumType>, const TEnumAsByte<EnumType>*);
 
 template <typename EnumType>
-bool FEnumBrickPropertyBase::CycleEnumPropertyExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, EnumType& Value, const FGetEnumItems& GetItemsDelegate, const bool bUpdateAllProperties)
+bool FEnumBrickPropertyBase::CycleEnumPropertyExternalInternal(const FBrickPropertyContainer& Container, const FName& PropertyName, EnumType& Value, const FGetEnumItems& GetItemsDelegate)
 {
 	TArray<FEnumPropertyItem> EnumItems;
 	GetItemsDelegate.Execute(Container, EnumItems);
 
 	int32 NewIndex = INDEX_NONE;
-	for (auto i = 0; i < EnumItems.Num(); ++i)
+	for (int32 i = 0; i < EnumItems.Num(); ++i)
 	{
 		if (EnumItems[i].GetItem() == static_cast<int32>(Value))
 		{
@@ -198,7 +198,7 @@ bool FEnumBrickPropertyBase::CycleEnumPropertyExternalInternal(const FBrickPrope
 	if (EnumItems.IsValidIndex(NewIndex))
 	{
 		const EnumType NewValue = EnumType(EnumItems[NewIndex].GetItem());
-		return SetPropertyValueExternalInternal(Container, PropertyName, Value, NewValue, bUpdateAllProperties);
+		return SetPropertyValueExternalInternal(Container, PropertyName, Value, NewValue);
 	}
 
 	return false;
@@ -231,7 +231,7 @@ bool FEnumBrickPropertyBase::ValidateEnumProperty(const FBrickPropertyContainer&
 		return true;
 	}
 	// Search for an allowed item
-	for (auto i = 0; i < EnumItems.Num(); ++i)
+	for (int32 i = 0; i < EnumItems.Num(); ++i)
 	{
 		if (
 			i != SelectedItemIndex

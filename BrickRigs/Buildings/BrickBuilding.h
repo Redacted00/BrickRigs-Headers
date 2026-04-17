@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BrickBuilding.generated.h"
@@ -143,6 +144,9 @@ public:
 	virtual void PostRegisterAllComponents() override;
 	virtual void Destroyed() override;
 	virtual void Tick(float DeltaTime) override;
+#if !BR_BUILD_VANILLA
+	virtual bool CanBeDamaged() const override;
+#endif
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual float InternalTakePointDamage(float Damage, const FPointDamageEvent& PointDamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual float InternalTakeRadialDamage(float Damage, const FRadialDamageEvent& RadialDamageEvent, AController* EventInstigator, AActor* DamageCauser) override;

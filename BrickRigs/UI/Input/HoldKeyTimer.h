@@ -1,44 +1,32 @@
 #pragma once
 
-#include "Misc/FluTimer.h"
 #include "Settings/BrickUserSettings.h"
 #include "CoreMinimal.h"
+#include "UI/Misc/BrickUITimer.h"
 
-// This struct is used as a timer for hold key actions
-struct FHoldKeyTimer
+// This struct is used as a timer for key holding actions
+struct FHoldKeyTimer : public FBrickUITimer
 {
 	// To be called when the key has been pressed with the held callback
-	template <class UserClass>
-	void OnPressed(UserClass* Object, void (UserClass::*Function)(), const float Delay = GetHoldTime())
+	template <class UserClass, typename CallbackType, typename = typename TEnableIf<!TIsFloatingPoint<CallbackType>::Value>::Type>
+	void OnPressed(UserClass* Object, CallbackType Function, float Delay = GetHoldTime())
 	{
-		Timer.Set(Object, Function, Delay);
-	}
-
-	// Delegate version
-	void OnPressed(const UObject* WorldContextObject, const FTimerDelegate& Delegate, const float Delay = GetHoldTime())
-	{
-		Timer.Set(WorldContextObject, Delegate, Delay);
-	}
-
-	// Weak lambda version
-	void OnPressed(UObject* Object, const TFunction<void()>& Callback, const float Delay = GetHoldTime())
-	{
-		Timer.Set(Object, Callback, Delay);
+		StartTimer(Object, Function, Delay);
 	}
 
 	// Version that doesn't take a callback
-	void OnPressed(const UObject* WorldContextObject, const float Delay = GetHoldTime())
+	void OnPressed(UObject* Object, float Delay = GetHoldTime())
 	{
-		Timer.Set(WorldContextObject, Delay);
+		StartTimer(Object, Delay);
 	}
 
 	// To be called when the key has been released, return true if the key has been tapped and not held
-	bool OnReleased(const UObject* WorldContextObject)
+	bool OnReleased()
 	{
-		if (Timer.IsActive(WorldContextObject))
+		if (IsTimerActive())
 		{
 			// Abort the hold timer
-			Timer.Clear(WorldContextObject);
+			CancelTimer();
 			return true;
 		}
 
@@ -50,6 +38,4 @@ private:
 	{
 		return UBrickUserSettings::GetUserSettings()->GetHoldKeyTime();
 	}
-
-	FFluRealTimer Timer;
 };

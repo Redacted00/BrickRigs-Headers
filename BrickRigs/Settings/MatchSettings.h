@@ -56,10 +56,10 @@ struct FWorldSetupParams : public FBrickStructPropertyInterface
 
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
-		FFluSerializationStatics::SerializeFloatCompressed<uint8>(Ar, SunAngle, 0.f, 90.f);
-		FFluSerializationStatics::SerializeFloatCompressed<uint8>(Ar, SunYaw, -180.f, 180.f);
-		FFluSerializationStatics::SerializeFloatCompressed<uint16>(Ar, TimeOfDay, 0.f, 24.f);
-		FFluSerializationStatics::SerializeFloatCompressed<uint8>(Ar, AtmosphereDensity, 0.f, 1.f);
+		FSerializationHelper::SerializeFloatCompressed(Ar, SunAngle, 0.f, 90.f, 8);
+		FSerializationHelper::SerializeFloatCompressed(Ar, SunYaw, -180.f, 180.f, 8);
+		FSerializationHelper::SerializeFloatCompressed(Ar, TimeOfDay, 0.f, 24.f, 16);
+		FSerializationHelper::SerializeFloatCompressed(Ar, AtmosphereDensity, 0.f, 1.f, 8);
 		DayLength.NetSerialize(Ar, Map, bOutSuccess);
 		Ar << Weather;
 
@@ -262,7 +262,7 @@ public:
 		RestartDelay.NetSerialize(Ar, Map, bOutSuccess);
 
 		// Serialize the vehicle whitelist
-		FFluSerializationStatics::NetSerializeArray<uint16>(Ar, Map, bOutSuccess, VehicleWhitelist, MaxNumWhitelistedVehicles);
+		FSerializationHelper::NetSerializeArray<uint16>(Ar, Map, bOutSuccess, VehicleWhitelist, MaxNumWhitelistedVehicles);
 
 		// Serialize flags
 		TBitfieldSerializer<uint16> Bitfield(Ar);

@@ -19,10 +19,11 @@ struct FBrickEditorObjectPool
 		T* OutObject = nullptr;
 
 		// Try to find a pooled object
-		if (auto* ObjectArray = ObjectMap.Find(ObjectClass))
+		auto* ObjectArray = ObjectMap.Find(ObjectClass);
+		if (ObjectArray)
 		{
 			// Iterate backwards to make removals more performant
-			for (auto i = ObjectArray->Num() - 1; i >= 0; --i)
+			for (int32 i = ObjectArray->Num() - 1; i >= 0; --i)
 			{
 				// Save a weak reference and remove the entry from the pool
 				auto WeakPtr = (*ObjectArray)[i];
@@ -77,7 +78,7 @@ struct FBrickEditorObjectPool
 				{
 					if (WeakPtr->IsA<UActorComponent>())
 					{
-						auto* Component = CastChecked<UActorComponent>(WeakPtr.Get());
+						UActorComponent* Component = CastChecked<UActorComponent>(WeakPtr.Get());
 						Component->DestroyComponent();
 					}
 					else
@@ -93,8 +94,8 @@ struct FBrickEditorObjectPool
 private:
 	// ~Variables
 	// The object to use as the outer for new objects
-	const TWeakObjectPtr<> Outer;
+	const TWeakObjectPtr<UObject> Outer;
 	// Maps an array of pooled objects to each class
-	TMap<UClass*, TArray<TWeakObjectPtr<>>> ObjectMap;
+	TMap<UClass*, TArray<TWeakObjectPtr<UObject>>> ObjectMap;
 	// ~Variables
 };

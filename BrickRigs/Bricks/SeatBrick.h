@@ -18,11 +18,8 @@ class UActuatorBrick;
 class UAnimSequence;
 class ABrickCharacter;
 
-USTRUCT()
-struct FSeatBrickEditorParams : public FBrickEditorParams
+struct FSeatBrickEditorParams : FBrickEditorParams
 {
-	GENERATED_BODY()
-
 	TBrickEditorComponentPtr<UBrickEditorSkeletalMeshComponent> CharacterMeshComponent;
 	bool bIsExitLocationFocused = false;
 };
@@ -155,8 +152,6 @@ class BRICKRIGS_API USeatBrick : public UBrick
 
 protected:
 	// ~Brick properties
-	UPROPERTY(EditDefaultsOnly, Category = Seat)
-	FString SeatName;
 	// Relative exit location
 	UPROPERTY(EditDefaultsOnly, Category = Seat)
 	FVector ExitLocation;
@@ -177,7 +172,7 @@ public:
 	// ~Super Interface
 	virtual void RecycleBrickEditorObject() override;
 	virtual void PostLoadBrickEditorObject(FBrickRigsSaveVersion Version, const FLegacyBrickEditorObjectClassID& LegacyClassId, const FBrickEditorReferenceResolver* ReferenceResolver) override;
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
 	virtual void SetupBrickEditorObjectDefaults(const FSetupBrickEditorObjectDefaultsParams& Params) override;
 	virtual void SetupVehicleInventory(FInventoryProperties& OutProperties, FInventoryLoadout& OutLoadout) override;
@@ -196,21 +191,18 @@ public:
 	virtual bool CanBePickedUp() const override;
 	virtual void ReflectBrickProperties(FBrickPropertyReflection& Params) const override;
 	virtual void PostModifyBrickProperty(const FBrickPropertyChangedEvent& Event) override;
-	virtual bool ResolveRemovedBrickProperty(const FResolveBrickPropertyParams& Params) override;
+	virtual bool ResolveDeprecatedBrickProperty(const FResolveBrickPropertyParams& Params) override;
 	virtual void UpdateFocusedBrickProperty(const FBrickPropertyFocusEvent& Event) override;
 	virtual void UpdateEditorVisualization() override;
 
 	virtual TUniquePtr<FBrickEditorObjectEditorParams> CreateEditorParams() const override
 	{
-		return MakeEditorParams<FSeatBrickEditorParams>();
+		return MakeUnique<FSeatBrickEditorParams>();
 	}
 
 	// ~Super Interface
 
 	// ~Seat
-	// Returns the friendly display name of the seat
-	FText GetSeatDisplayName() const;
-
 	// Get the legacy seat channel index
 	uint8 GetLegacySeatChannel() const
 	{
@@ -252,6 +244,15 @@ public:
 
 	// Whether this seat is the driver seat instance
 	bool IsDriverSeat() const;
+
+	// Whether any driver seat is set on the vehicle
+	bool IsDriverSeatSet() const;
+
+	// Makes this seat the driver seat (use in editor only!)
+	bool SetAsDriverSeat();
+
+	// Clears the driver seat on the vehicle
+	bool ClearDriverSeat();
 
 	// Return whether the seat is currently occupied
 	bool IsSeatOccupied() const

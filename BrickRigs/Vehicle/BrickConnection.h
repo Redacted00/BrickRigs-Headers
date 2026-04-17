@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BrickEditor/BrickEditorObjectID.h"
-#include "Misc/FluMathTypes.h"
 #include "UObject/Object.h"
 #include "BrickConnection.generated.h"
 
@@ -12,6 +11,18 @@ class UPhysicsConstraintComponent;
 #define BRICK_SIZE 30.f
 #define BRICK_HALF_SIZE 15.f
 #define BRICK_SUB_SIZE 10.f
+
+UENUM(BlueprintType)
+enum class EConnectorDirection : uint8
+{
+	X,
+	Y,
+	Z,
+	XNeg,
+	YNeg,
+	ZNeg,
+	Max
+};
 
 UENUM(BlueprintType)
 enum class EConnectorType : uint8
@@ -82,8 +93,7 @@ enum class EConnectorShape : uint8
 	QuarterCircle,
 	FlippedQuarterCircle,
 	InvertedQuarterCircle,
-	FlippedInvertedQuarterCircle,
-	Diamond
+	FlippedInvertedQuarterCircle
 };
 
 USTRUCT(BlueprintType)
@@ -96,7 +106,7 @@ struct FConnectorField
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Connector)
 	EConnectorGender Gender;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Connector)
-	EFluAxisSigned Direction;
+	EConnectorDirection Direction;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Connector)
 	FVector Origin;
 	// Additional offset to direction
@@ -121,17 +131,17 @@ struct FConnectorField
 #endif
 
 	// ~Constructor
-	FConnectorField(EConnectorType InType = EConnectorType::Default, EConnectorGender InGender = EConnectorGender::Male, EFluAxisSigned InDirection = EFluAxisSigned::ZPos)
+	FConnectorField(EConnectorType InType = EConnectorType::Default, EConnectorGender InGender = EConnectorGender::Male, EConnectorDirection InDirection = EConnectorDirection::Z)
 		: Type(InType)
-		, Gender(InGender)
-		, Direction(InDirection)
-		, Origin(FVector::ZeroVector)
-		, Rotation(FRotator::ZeroRotator)
-		, NumX(1)
-		, NumY(1)
-		, Spacing(EConnectorSpacing::Default)
-		, Shape(EConnectorShape::Rectangle)
-		, ShapeRelativeSize(FVector2D(1.f, 1.f))
+		  , Gender(InGender)
+		  , Direction(InDirection)
+		  , Origin(FVector::ZeroVector)
+		  , Rotation(FRotator::ZeroRotator)
+		  , NumX(1)
+		  , NumY(1)
+		  , Spacing(EConnectorSpacing::Default)
+		  , Shape(EConnectorShape::Rectangle)
+		  , ShapeRelativeSize(FVector2D(1.f, 1.f))
 	{
 	}
 
@@ -142,11 +152,11 @@ struct FConnectorField
 		for (const auto& ConnectorField : InConnectors)
 		{
 			auto CheckExtrema = [&](int32 X, int32 Y)
-				{
-					const auto ConnectorFieldTM = ConnectorField.GetConnectorTransform();
-					const auto ExtremaLocation = ConnectorField.GetNobLocation(ConnectorFieldTM, X, Y);
-					MaxConnectorDistSq = FMath::Max(MaxConnectorDistSq, ExtremaLocation.SizeSquared());
-				};
+			{
+				const auto ConnectorFieldTM = ConnectorField.GetConnectorTransform();
+				const auto ExtremaLocation = ConnectorField.GetNobLocation(ConnectorFieldTM, X, Y);
+				MaxConnectorDistSq = FMath::Max(MaxConnectorDistSq, ExtremaLocation.SizeSquared());
+			};
 
 			// NOTE: We have to check all corners of the connector, since any one of them could be the farthest away
 			CheckExtrema(0, 0);
@@ -240,12 +250,6 @@ struct FConnectorField
 	// Get the connector spacing in cm
 	float GetSpacing() const
 	{
-		return GetSpacing(Spacing);
-	}
-
-	// Static version
-	static float GetSpacing(const EConnectorSpacing Spacing)
-	{
 		switch (Spacing)
 		{
 		case EConnectorSpacing::Default:
@@ -262,6 +266,25 @@ struct FConnectorField
 			return BRICK_SIZE * 4;
 		default:
 			return 0.f;
+		}
+	}
+
+	// Converts the connector direction to an axis
+	EAxis::Type GetAxis() const
+	{
+		switch (Direction)
+		{
+		case EConnectorDirection::X:
+		case EConnectorDirection::XNeg:
+			return EAxis::X;
+		case EConnectorDirection::Y:
+		case EConnectorDirection::YNeg:
+			return EAxis::Y;
+		case EConnectorDirection::Z:
+		case EConnectorDirection::ZNeg:
+			return EAxis::Z;
+		default:
+			return EAxis::None;
 		}
 	}
 
@@ -286,7 +309,7 @@ private:
 		return FMath::Sqrt(1.f - FMath::Square(1.f - Val * 2.f));
 	}
 
-	// Evaluates the shape function
+	// Evalulates the shape functiton
 	void EvalShape(float Val, FFloatInterval& OutRange) const
 	{
 		switch (Shape)
@@ -304,12 +327,12 @@ private:
 			OutRange.Max = 1.f - FMath::Abs(Val - 0.5f) * 2.f;
 			break;
 		case EConnectorShape::Circle:
-		{
-			const auto CircleVal = EvalCircle(Val) * 0.5f;
-			OutRange.Min = FMath::Max(0.5f - CircleVal, 0.f);
-			OutRange.Max = 0.5f + CircleVal;
-			break;
-		}
+			{
+				const auto CircleVal = EvalCircle(Val) * 0.5f;
+				OutRange.Min = FMath::Max(0.5f - CircleVal, 0.f);
+				OutRange.Max = 0.5f + CircleVal;
+				break;
+			}
 		case EConnectorShape::HalfCircle:
 			// NOTE: This is to make sure we always round up and don't have a connector on the negative side, some with other circles
 			OutRange.Min = 0.5f + KINDA_SMALL_NUMBER;
@@ -330,10 +353,6 @@ private:
 		case EConnectorShape::FlippedInvertedQuarterCircle:
 			OutRange.Min = 0.f;
 			OutRange.Max = 1.f - FMath::Sqrt(1.f - FMath::Square(1.f - Val));
-			break;
-		case EConnectorShape::Diamond:
-			OutRange.Max = Val < 0.5f ? Val + 0.5f : 1.5f - Val;
-			OutRange.Min = 1.f - OutRange.Max;
 			break;
 		default:
 			OutRange.Min = 0.f;
@@ -357,41 +376,33 @@ public:
 	// Get the relative space rotation of the connector
 	FQuat GetConnectorRotation() const
 	{
-		return GetConnectorRotation(Direction, Rotation);
-	}
-
-	// Static version
-	static FQuat GetConnectorRotation(const EFluAxisSigned Direction, const FRotator& Rotation)
-	{
 		FVector Normal, RightVector;
 		switch (Direction)
 		{
-		case EFluAxisSigned::XPos:
+		case EConnectorDirection::X:
 			Normal = FVector::ForwardVector;
 			RightVector = -FVector::RightVector;
 			break;
-		case EFluAxisSigned::YPos:
+		case EConnectorDirection::Y:
 			Normal = FVector::RightVector;
 			RightVector = -FVector::ForwardVector;
 			break;
-		case EFluAxisSigned::ZPos:
+		case EConnectorDirection::Z:
 			Normal = FVector::UpVector;
 			RightVector = FVector::RightVector;
 			break;
-		case EFluAxisSigned::XNeg:
+		case EConnectorDirection::XNeg:
 			Normal = -FVector::ForwardVector;
 			RightVector = FVector::RightVector;
 			break;
-		case EFluAxisSigned::YNeg:
+		case EConnectorDirection::YNeg:
 			Normal = -FVector::RightVector;
 			RightVector = FVector::ForwardVector;
 			break;
-		case EFluAxisSigned::ZNeg:
+		case EConnectorDirection::ZNeg:
 			Normal = -FVector::UpVector;
 			RightVector = -FVector::RightVector;
 			break;
-		default:
-			ensure(false);
 		}
 
 		// Apply the custom rotation
@@ -466,7 +477,7 @@ public:
 
 #if WITH_EDITORONLY_DATA
 template <>
-struct TStructOpsTypeTraits<FConnectorField> : TStructOpsTypeTraitsBase2<FConnectorField>
+struct TStructOpsTypeTraits<FConnectorField> : public TStructOpsTypeTraitsBase2<FConnectorField>
 {
 	enum
 	{
@@ -529,7 +540,7 @@ struct FBrickConnectionParams
 };
 
 template <>
-struct TStructOpsTypeTraits<FBrickConnectionParams> : TStructOpsTypeTraitsBase2<FBrickConnectionParams>
+struct TStructOpsTypeTraits<FBrickConnectionParams> : public TStructOpsTypeTraitsBase2<FBrickConnectionParams>
 {
 	enum
 	{
@@ -980,6 +991,7 @@ class UActuatorConnection : public UPhysicsConstraintConnection
 {
 	GENERATED_BODY()
 
+private:
 	// ~Variables
 	// Current actuation
 	float Actuation;
@@ -1008,6 +1020,7 @@ class UCouplingConnection : public UPhysicsConstraintConnection
 {
 	GENERATED_BODY()
 
+private:
 	// ~Variables
 	// The current transition ratio of the coupling animation, range 0-1
 	TOptional<float> CouplingTransitionRatio;

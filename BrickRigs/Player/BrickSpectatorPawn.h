@@ -18,7 +18,8 @@ enum class EFreeCamMode : uint8
 	Default,
 	FollowLocation,
 	FollowLocationAndRotation,
-	LookAt
+	LookAt,
+	Max
 };
 
 /**

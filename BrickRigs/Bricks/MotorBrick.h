@@ -77,6 +77,7 @@ public:
 	// ~Super Interface
 };
 
+
 /**
  *
  */
@@ -138,7 +139,7 @@ public:
 	UMotorBrick();
 
 	// ~Super Interface
-	virtual void PostConstructVehicle() override;
+	virtual void PostInitializeBrickEditorObject() override;
 	virtual void UninitializeBrickEditorObject() override;
 	virtual bool ShouldBrickTick() const override;
 	virtual void TickBrick(float DeltaTime) override;

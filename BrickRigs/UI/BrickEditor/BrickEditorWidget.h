@@ -13,12 +13,12 @@
 
 // Widgets
 class UBrickTextBoxWidget;
-class UBrickGridPanel;
+class UGridPanel;
 class UPlacableObjectWidget;
 class UPropertiesPanelWidget;
 class UPopupWidget;
 class UBrickEditorModeWidget;
-class UBrickEditorMirrorAxisWidget;
+class UBrickEditorMirrorModeWidget;
 class UPagedListHeaderWidget;
 // Actors
 class ABrickEditor;
@@ -48,7 +48,7 @@ class BRICKRIGS_API UBrickEditorWidget : public UUserWidget, public IHUDWidgetIn
 	FBrickEditorObjectFilterRef PlacableFilter;
 	// All mirror mode widgets that have been created
 	UPROPERTY(Transient)
-	TArray<UBrickEditorMirrorAxisWidget*> MirrorAxisWidgets;
+	TArray<UBrickEditorMirrorModeWidget*> MirrorModeWidgets;
 	TOptional<bool> bIsPropertiesPanelEnabled;
 	// ~Variables
 
@@ -59,7 +59,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UBrickTextBoxWidget* PlacableSearchTextBox;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* PlacablesPanel;
+	UGridPanel* PlacablesPanel;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UPropertiesPanelWidget* PropertiesPanel;
 	// ~Widgets
@@ -74,7 +74,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Editor)
 	TSubclassOf<UBrickEditorModeWidget> MoveModeWidgetClass;
 	UPROPERTY(EditDefaultsOnly, Category = Editor)
-	TSubclassOf<UBrickEditorMirrorAxisWidget> MirrorModeWidgetClass;
+	TSubclassOf<UBrickEditorMirrorModeWidget> MirrorModeWidgetClass;
 	// ~Properties
 
 public:
@@ -112,7 +112,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void AddModeWidget(UBrickEditorModeWidget* Widget);
 	UFUNCTION(BlueprintImplementableEvent)
-	void AddMirrorModeWidget(UBrickEditorMirrorAxisWidget* Widget, int32 Index);
+	void AddMirrorModeWidget(UBrickEditorMirrorModeWidget* Widget, int32 Index);
 	// ~Blueprint Interface
 
 private:
@@ -134,14 +134,14 @@ public:
 	void PlaceObject(UClass* InStaticInfoClass);
 	// ~Placables
 
-	// ~Mirror Axis
+	// ~Mirror Mode
 	// Called from the mirror mode widgets
-	void SelectMirrorAxis(const EAxis::Type NewAxis);
+	void SelectMirrorMode(EBrickEditorMirrorMode NewMode);
 
 private:
-	// Called when the mirror axis changability has changed
-	void UpdateCanChangeMirrorAxis();
-	// ~Mirror Axis
+	// Called when the mirror mode changability has changed
+	void UpdateCanChangeMirrorMode();
+	// ~Mirror Mode
 
 	// ~Properties
 	// Update the properties displayed
@@ -161,8 +161,8 @@ private:
 	// Callbacks for the game instance
 	void OnUGCUploadStarted();
 	// Callbacks for the user settings
-	void OnMirrorAxisChanged(const EAxis::Type NewAxis);
-	void SetMirrorAxis(const EAxis::Type NewAxis);
+	void OnMirrorModeChanged(EBrickEditorMirrorMode NewMode);
+	void SetMirrorMode(EBrickEditorMirrorMode NewMode);
 	UFUNCTION()
 	void OnMeasurementSystemChanged(EMeasurementSystem NewSystem);
 	// Callbacks for the placable text box

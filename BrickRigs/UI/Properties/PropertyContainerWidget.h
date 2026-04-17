@@ -10,7 +10,6 @@
 #include "UI/Widgets/BrickUserWidget.h"
 #include "PropertyContainerWidget.generated.h"
 
-class UMenuButtonPanelWidget;
 struct FBrickProperty;
 struct FBrickPropertyEditInfo;
 class UBrickTextBlock;
@@ -70,7 +69,7 @@ class BRICKRIGS_API UPropertyContainerWidget : public UBrickUserWidget
 
 	// ~Variables
 	// Streamable handle used during async loading of the property widget class
-	FFluAsyncAssetLoader AssetLoader_PropertyWidgetClass;
+	FSmartStreamableHandle StreamableHandle_PropertyWidgetClass;
 	// Property list object containing this property
 	TWeakObjectPtr<UWidget> PropertyList;
 	// Slot index the widget was added to
@@ -90,8 +89,6 @@ protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UBrickTextBlock* NameTextBlock;
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UMenuButtonPanelWidget* ButtonPanelWidget;
 	// ~Widgets
 
 public:
@@ -130,12 +127,6 @@ public:
 		return PropertyWidget;
 	}
 
-	UFUNCTION(BlueprintPure)
-	UMenuButtonPanelWidget* GetMenuButtonPanelWidget() const
-	{
-		return ButtonPanelWidget;
-	}
-
 protected:
 	// Opens the property context menu
 	UFUNCTION(BlueprintCallable)
@@ -150,10 +141,6 @@ protected:
 	void UpdateIsReadOnly(bool bInReadOnly);
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateColorStyle(EBrickUIColorStyle InColorStyle);
-	UFUNCTION(BlueprintImplementableEvent)
-	void PreAddPropertyButtons();
-	UFUNCTION(BlueprintImplementableEvent)
-	void PostAddPropertyButtons();
 
 public:
 	UFUNCTION(BlueprintNativeEvent)

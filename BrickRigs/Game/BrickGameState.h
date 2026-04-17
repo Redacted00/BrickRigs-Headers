@@ -2,8 +2,9 @@
 
 #pragma once
 
+#include "BrickRigsMacros.h"
 #include "Player/PlayerSpawnRequest.h"
-#include "Misc/FluTimer.h"
+#include "Misc/BrickTimer.h"
 #include "Misc/BrickTeam.h"
 #include "MatchWinner.h"
 #include "Properties/BrickPropertyInterface.h"
@@ -31,7 +32,7 @@ class BRICKRIGS_API ABrickGameState : public AGameState, public IBrickPropertyIn
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchSettingsChanged, const FMatchSettings&);
 
 	// ~Variables
-	FFluRealTimer Timer_RevertNextMatchSettings;
+	FBrickTimer Timer_RevertNextMatchSettings;
 	// World time when the elapsed time variable has been reset
 	float ElapsedTimeResetTime;
 	// Number of game mode specific sub levels that are still pending load
@@ -112,6 +113,10 @@ public:
 	// ~Super Interface
 	virtual void PostInitializeComponents() override;
 	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
+#if !BR_BUILD_VANILLA
+	virtual void PreNetReceiveSubobjects(const FReplicationFlags& RepFlags) override;
+	virtual TSubclassOf<APlayerController> OverrideReplaySpectatorPlayerControllerClass(TSubclassOf<APlayerController> Class) override;
+#endif
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 	virtual void HandleBeginPlay() override;
 	virtual void Destroyed() override;

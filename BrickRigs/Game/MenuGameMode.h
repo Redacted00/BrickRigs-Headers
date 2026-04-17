@@ -3,9 +3,9 @@
 #pragma once
 
 #include "Settings/MatchSettings.h"
+#include "Engine/StreamableManager.h"
 #include "GameFramework/GameModeBase.h"
 #include "Misc/BrickAssetManager.h"
-#include "Misc/FluAsyncAssetLoader.h"
 #include "MenuGameMode.generated.h"
 
 class AMenuSequence;
@@ -21,7 +21,7 @@ class BRICKRIGS_API AMenuGameMode : public AGameModeBase
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnMenuSequenceCreated, AMenuSequence*);
 
 	// ~Variables
-	FFluAsyncAssetLoader AssetLoader_MenuSequence;
+	FSmartStreamableHandle StreamableHandle_MenuSequence;
 	// The menu sequence class that is pending to be created
 	UPROPERTY(Transient)
 	UClass* MenuSequenceClass;

@@ -73,7 +73,14 @@ public:
 	// Change the state of a single flag
 	void SetVisibilityFlag(EHUDIconDomain InDomain, bool bVisible)
 	{
-		FFluEnumStatics::BitmaskSetFlag(VisibilityFlags, InDomain, bVisible);
+		if (bVisible)
+		{
+			VisibilityFlags |= (1 << static_cast<int32>(InDomain));
+		}
+		else
+		{
+			VisibilityFlags &= ~(1 << static_cast<int32>(InDomain));
+		}
 	}
 };
 
@@ -134,7 +141,7 @@ public:
 	// Whether the icon should ever be shown in the given type of HUD
 	bool CanIconEverBeVisible(EHUDIconDomain InDomain) const
 	{
-		return FFluEnumStatics::BitmaskHasFlag(HUDIconProperties.VisibilityFlags, InDomain);
+		return ((1 << static_cast<int32>(InDomain)) & HUDIconProperties.VisibilityFlags) != 0;
 	}
 
 	// Return whether the icon should currently be shown for the given player

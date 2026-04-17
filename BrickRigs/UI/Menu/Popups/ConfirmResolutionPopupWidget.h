@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "UI/Misc/BrickUITimer.h"
 #include "CoreMinimal.h"
 #include "UI/Menu/Popups/PopupWidget.h"
 #include "ConfirmResolutionPopupWidget.generated.h"
@@ -25,9 +26,10 @@ class BRICKRIGS_API UConfirmResolutionPopupWidget : public UPopupWidget
 {
 	GENERATED_BODY()
 
+private:
 	// ~Variables
 	// Timer used to update the countdown
-	FFluUITimer Timer_UpdateCountdown;
+	FBrickUITimer Timer_UpdateCountdown;
 	// Number of seconds remaining until the resolution is reverted
 	int32 SecondsRemaining;
 	// ~Variables

@@ -10,7 +10,7 @@
 
 class UInventoryPopupWidget;
 class UInventorySlotWidget;
-class UBrickGridPanel;
+class UGridPanel;
 class UInventoryComponent;
 class UInventoryDragDropOperation;
 struct FInventorySpecialSlot;
@@ -39,7 +39,7 @@ private:
 protected:
 	// ~Widgets
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	UBrickGridPanel* SlotsPanel;
+	UGridPanel* SlotsPanel;
 	// ~Widgets
 
 public:

@@ -26,26 +26,17 @@ struct FDefaultInputMapping
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	uint8 bShift : 1;
+	uint8 bShift : 1 = false;
 	UPROPERTY(EditAnywhere)
-	uint8 bCtrl : 1;
+	uint8 bCtrl : 1 = false;
 	UPROPERTY(EditAnywhere)
-	uint8 bAlt : 1;
+	uint8 bAlt : 1 = false;
 	UPROPERTY(EditAnywhere)
-	uint8 bCmd : 1;
+	uint8 bCmd : 1 = false;
 	UPROPERTY(EditAnywhere)
 	FKey Key;
 	UPROPERTY(EditAnywhere)
 	float Scale = 1.f;
-
-	// ~Constructor
-	FDefaultInputMapping()
-	{
-		bShift = false;
-		bCtrl = false;
-		bAlt = false;
-		bCmd = false;
-	}
 
 	FInputActionKeyMapping ToActionKeyMapping(const FName& ActionName) const
 	{
@@ -135,7 +126,7 @@ public:
 		if (bIsAction)
 		{
 			// Group actions together that belong together but have a different suffix, like ZoomIn and ZoomOut
-			const static TMap<FString, FString> DirectionSuffixes = { {"Right", "Left"}, {"Forward", "Backward"}, {"Up", "Down"}, {"In", "Out"} };
+			const static TMap<FString, FString> DirectionSuffixes = {{"Right", "Left"}, {"Forward", "Backward"}, {"Up", "Down"}, {"In", "Out"}};
 
 			auto ShortActionName = ActionName.ToString();
 			for (const auto& Pair : DirectionSuffixes)

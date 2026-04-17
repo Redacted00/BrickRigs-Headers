@@ -7,7 +7,6 @@
 #include "UI/Menu/MenuSequenceProperties.h"
 #include "BrickAssetManager.generated.h"
 
-class UExhaustEffect;
 class UMenuMusic;
 class AMenuSequence;
 class UBrickDecal;
@@ -18,6 +17,98 @@ class UWeatherCondition;
 class ULevelInfo;
 class UBrickMaterial;
 class UPropertyWidget;
+
+// Offers a shorter and safer syntax for handling async loading
+struct FSmartStreamableHandle
+{
+	enum class EState : uint8
+	{
+		InProgress,
+		AlreadyLoaded,
+		Finished
+	};
+
+	~FSmartStreamableHandle()
+	{
+		Cancel();
+	}
+
+	template <class T, typename FPointer>
+	void Load(const FPointer& Asset, const TDelegate<void(T*, EState)>& Delegate)
+	{
+		// Check if we are already loading something
+		if (Handle.IsValid())
+		{
+			// Check if the same asset is being requested again
+			auto RequestedAssets = TArray<FSoftObjectPath>();
+			Handle->GetRequestedAssets(RequestedAssets);
+			if (RequestedAssets.Contains(Asset.ToSoftObjectPath()))
+			{
+				// Loading is still in progress, notify the caller and abort
+				Delegate.Execute(nullptr, EState::InProgress);
+				return;
+			}
+
+			// Cancel the previous load
+			Handle->CancelHandle();
+			Handle.Reset();
+		}
+
+		// If the asset is already valid or will never be (is null) call the callback right away
+		if (Asset.IsValid() || Asset.IsNull())
+		{
+			Delegate.Execute(Asset.Get(), EState::AlreadyLoaded);
+		}
+		else
+		{
+			// Notify that the loading is starting
+			Delegate.Execute(nullptr, EState::InProgress);
+
+			// Start the async load
+			Handle = UAssetManager::GetStreamableManager().RequestAsyncLoad(Asset.ToSoftObjectPath(), [this, Delegate]
+			{
+				if (Handle.IsValid())
+				{
+					auto* LoadedAsset = Cast<T>(Handle->GetLoadedAsset());
+					Handle.Reset();
+					// Notify the caller
+					Delegate.Execute(LoadedAsset, EState::Finished);
+				}
+			});
+		}
+	}
+
+	// Version that binds a weak object lambda delegate
+	template <class T, typename FPointer>
+	void Load(const FPointer& Asset, UObject* Object, const TFunction<void(T*, EState)>& Lambda)
+	{
+		Load<T>(Asset, TDelegate<void(T*, EState)>::CreateWeakLambda(Object, Lambda));
+	}
+
+	// Version that binds a member function delegate
+	template <class T, class U, typename FPointer>
+	void Load(const FPointer& Asset, U* Object, typename TMemFunPtrType<false, U, void(T*, EState)>::Type InFunc)
+	{
+		Load<T>(Asset, TDelegate<void(T*, EState)>::CreateUObject(Object, InFunc));
+	}
+
+	void Cancel()
+	{
+		if (Handle.IsValid())
+		{
+			Handle->CancelHandle();
+			Handle.Reset();
+		}
+	}
+
+	bool IsLoading() const
+	{
+		return Handle.IsValid();
+	}
+
+private:
+	TSharedPtr<FStreamableHandle> Handle;
+};
 
 enum class ELoadAssetLibrariesMode : uint8
 {
@@ -62,8 +153,6 @@ class BRICKRIGS_API UBrickAssetManager : public UAssetManager
 	TArray<UBrickDecal*> BrickDecals;
 	UPROPERTY(Transient)
 	TArray<UBrickFont*> BrickFonts;
-	UPROPERTY(Transient)
-	TArray<UExhaustEffect*> ExhaustEffects;
 	UPROPERTY(Transient)
 	TArray<UClass*> SirenSequenceClasses;
 	UPROPERTY(Transient)
@@ -162,11 +251,6 @@ public:
 	const auto& GetBrickFonts() const
 	{
 		return BrickFonts;
-	}
-
-	const auto& GetExhaustEffects() const
-	{
-		return ExhaustEffects;
 	}
 
 	const auto& GetSirenSequences() const
